@@ -721,13 +721,18 @@ app.get('/donations/add', requireLogin, async (req, res) => {
 
 // 3. PROCESS "ADD DONATION" SUBMISSION
 app.post('/donations/add', requireLogin, async (req, res) => {
-  const { user_id, amount, donation_date } = req.body;
+  let { user_id, amount, donation_date } = req.body;
+  
+  // SECURITY FIX: If not admin, force the user_id to be their own
+  if (req.session.user.role !== 'admin') {
+      user_id = req.session.user.id;
+  }
+
   try {
     await pool.query(
       `INSERT INTO donations (user_id, amount, donation_date) VALUES ($1, $2, $3)`,
       [user_id, amount, donation_date]
     );
-    // Redirect back to the list
     res.redirect('/donation_list'); 
   } catch (err) {
     console.error('❌ Error saving donation:', err);
