@@ -793,21 +793,25 @@ app.post('/donations/delete/:id', requireLogin, requireManager, async (req, res)
 
 
 
-// Surveys
+// ------------------- SURVEYS -------------------
 
+// Display all registrations and survey data (Manager) or user's own (User)
 app.get('/surveys', requireLogin, async (req, res) => {
   try {
-    const search = req.query.search || "";
-    const date = req.query.date || "";
-    const satisfaction = req.query.satisfaction || "";
-    let params = [];
-
+    const { search = '', date = '', overall = '' } = req.query;
+   
+    // Base SQL fragment for all registrations (surveys)
+    // Only include rows where at least one survey field has been filled out
     const baseQuery = `
         SELECT
             r.registration_id,
             r.status AS registration_status,
             r.check_in_time,
             r.survey_satisfaction,
+            r.survey_usefulness,
+            r.survey_instructor,
+            r.survey_recommendation,
+            r.survey_overall,
             r.survey_comments,
             u.user_id,
             u.first_name,
@@ -818,157 +822,198 @@ app.get('/surveys', requireLogin, async (req, res) => {
         JOIN users u ON r.user_id = u.user_id
         JOIN event_instances ei ON r.event_instance_id = ei.event_instance_id
         JOIN master_events me ON ei.master_event_id = me.master_event_id
+        WHERE (
+            r.survey_satisfaction IS NOT NULL OR
+            r.survey_usefulness IS NOT NULL OR
+            r.survey_instructor IS NOT NULL OR
+            r.survey_recommendation IS NOT NULL OR
+            r.survey_overall IS NOT NULL OR
+            r.survey_comments IS NOT NULL
+        )
     `;
-
-    let finalQuery = baseQuery;
-    let whereConditions = [];
-
-    // ---------- ADMIN ----------
+   
+    const where = [];
+    const params = [];
+    let p = 1;
+   
     if (req.session.user.role === 'admin') {
-      let paramIndex = 1;
-
-      // Text search
-      if (search) {
-        whereConditions.push(`(
-          LOWER(u.first_name) LIKE LOWER($${paramIndex})
-          OR LOWER(u.last_name) LIKE LOWER($${paramIndex})
-          OR LOWER(me.event_name) LIKE LOWER($${paramIndex})
-          OR LOWER(r.status) LIKE LOWER($${paramIndex})
-          OR CAST(r.registration_id AS TEXT) LIKE $${paramIndex}
-          OR LOWER(r.survey_comments) LIKE LOWER($${paramIndex})
-        )`);
-        params.push(`%${search}%`);
-        paramIndex++;
+      // Admin sees all records, but apply filters
+     
+      if (search && search.trim() !== '') {
+        where.push(`(u.first_name ILIKE $${p} OR u.last_name ILIKE $${p} OR me.event_name ILIKE $${p} OR r.status ILIKE $${p} OR r.survey_comments ILIKE $${p})`);
+        params.push(`%${search.trim()}%`);
+        p++;
       }
-
-      // Date filter
-      if (date) {
-        whereConditions.push(`DATE(ei.start_time) = $${paramIndex}`);
+     
+      if (date && date.trim() !== '') {
+        where.push(`DATE(ei.start_time) = $${p}`);
         params.push(date);
-        paramIndex++;
+        p++;
       }
-
-      // Satisfaction filter
-      if (satisfaction) {
-        if (satisfaction === 'N/A') {
-          whereConditions.push(`r.survey_satisfaction IS NULL`);
-        } else {
-          whereConditions.push(`r.survey_satisfaction = $${paramIndex}`);
-          params.push(parseInt(satisfaction));
-          paramIndex++;
-        }
+     
+      if (overall && overall !== '' && overall !== 'N/A') {
+        where.push(`r.survey_overall = $${p}`);
+        params.push(parseInt(overall));
+        p++;
+      } else if (overall === 'N/A') {
+        where.push(`r.survey_overall IS NULL`);
       }
-
-      if (whereConditions.length > 0) {
-        finalQuery += ` WHERE ${whereConditions.join(' AND ')}`;
-      }
-
-      finalQuery += ` ORDER BY r.created_at DESC`;
-
-      const result = await pool.query(finalQuery, params);
-
-      return res.render('surveys', {
+     
+      const sql = `
+        ${baseQuery}
+        ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+        ORDER BY r.created_at DESC
+      `;
+     
+      const result = await pool.query(sql, params);
+      res.render('surveys', {
         user: req.session.user,
         surveys: result.rows,
         search,
         date,
-        satisfaction
+        overall
+      });
+     
+    } else {
+      // Regular user sees only their own records
+      where.push(`r.user_id = $${p}`);
+      params.push(req.session.user.id);
+      p++;
+     
+      if (search && search.trim() !== '') {
+        where.push(`(me.event_name ILIKE $${p} OR r.status ILIKE $${p} OR r.survey_comments ILIKE $${p})`);
+        params.push(`%${search.trim()}%`);
+        p++;
+      }
+     
+      if (date && date.trim() !== '') {
+        where.push(`DATE(ei.start_time) = $${p}`);
+        params.push(date);
+        p++;
+      }
+     
+      if (overall && overall !== '' && overall !== 'N/A') {
+        where.push(`r.survey_overall = $${p}`);
+        params.push(parseInt(overall));
+        p++;
+      } else if (overall === 'N/A') {
+        where.push(`r.survey_overall IS NULL`);
+      }
+     
+      const sql = `
+        ${baseQuery}
+        WHERE ${where.join(' AND ')}
+        ORDER BY r.created_at DESC
+      `;
+     
+      const result = await pool.query(sql, params);
+      res.render('surveys', {
+        user: req.session.user,
+        surveys: result.rows,
+        search,
+        date,
+        overall
       });
     }
-
-    // ---------- NON-ADMIN ----------
-    whereConditions.push(`r.user_id = $1`);
-    params.push(req.session.user.id);
-    let paramIndex = 2;
-
-    // Text search
-    if (search) {
-      whereConditions.push(`(
-        LOWER(me.event_name) LIKE LOWER($${paramIndex})
-        OR LOWER(r.status) LIKE LOWER($${paramIndex})
-        OR CAST(r.registration_id AS TEXT) LIKE $${paramIndex}
-        OR LOWER(r.survey_comments) LIKE LOWER($${paramIndex})
-      )`);
-      params.push(`%${search}%`);
-      paramIndex++;
-    }
-
-    // Date filter
-    if (date) {
-      whereConditions.push(`DATE(ei.start_time) = $${paramIndex}`);
-      params.push(date);
-      paramIndex++;
-    }
-
-    // Satisfaction filter
-    if (satisfaction) {
-      if (satisfaction === 'N/A') {
-        whereConditions.push(`r.survey_satisfaction IS NULL`);
-      } else {
-        whereConditions.push(`r.survey_satisfaction = $${paramIndex}`);
-        params.push(parseInt(satisfaction));
-        paramIndex++;
-      }
-    }
-
-    finalQuery += ` WHERE ${whereConditions.join(' AND ')}`;
-    finalQuery += ` ORDER BY r.created_at DESC`;
-
-    const result = await pool.query(finalQuery, params);
-
-    res.render('surveys', {
-      user: req.session.user,
-      surveys: result.rows,
-      search,
-      date,
-      satisfaction
-    });
-
+   
   } catch (err) {
     console.error('❌ Error loading registrations/surveys:', err);
     res.status(500).send('Error loading registration and survey data.');
   }
 });
 
+// Render form to submit a new survey (User only)
+app.get('/survey_new', requireLogin, async (req, res) => {
+  try {
+    // Query Event Instances to show available events for survey
+    const events = await pool.query(`
+        SELECT
+            ei.event_instance_id AS event_id,
+            me.event_name AS title,
+            ei.start_time AS event_date
+        FROM event_instances ei
+        JOIN master_events me ON ei.master_event_id = me.master_event_id
+        ORDER BY ei.start_time DESC
+    `);
+    res.render('survey_new', { user: req.session.user, events: events.rows });
+  } catch (err) {
+    console.error('Error loading new survey form:', err);
+    res.status(500).send('Error loading survey form.');
+  }
+});
+
+// Handle survey submission
 app.post('/surveys', requireLogin, async (req, res) => {
-  // FIX 1: Destructure 'milestones' from the request body
-  const { event_id, satisfaction, usefulness, recommendation, milestones, comments } = req.body;
+  const { event_id, status, satisfaction, usefulness, instructor, recommendation, overall, comments, user_id } = req.body;
  
   try {
-    const user_id = req.session.user.id;
+    // Determine which user_id to use
+    let targetUserId;
+   
+    if (req.session.user.role === 'admin' && user_id) {
+      // Admin can submit surveys for other users
+      targetUserId = parseInt(user_id);
+    } else {
+      // Regular users submit for themselves
+      targetUserId = req.session.user.id;
+    }
 
-    // 1. Ensure the user is registered for this event
+    // Check if a registration record exists for this user and event instance
     const registrationCheck = await pool.query(
       'SELECT registration_id FROM registrations WHERE user_id = $1 AND event_instance_id = $2',
-      [user_id, event_id]
+      [targetUserId, event_id]
     );
 
     if (registrationCheck.rows.length === 0) {
-         await pool.query(
-            'INSERT INTO registrations (user_id, event_instance_id, status) VALUES ($1, $2, $3)',
-            [user_id, event_id, 'registered']
-        );
-    }
-   
-    // 2. Update the registration with survey data
-    // Note: We are saving 'satisfaction' into 'survey_instructor' as well, assuming that was your intent.
-    await pool.query(
-      `UPDATE registrations
-       SET survey_satisfaction = $1,
-           survey_usefulness = $2,
-           survey_instructor = $1, 
-           survey_recommendation = $3,
-           survey_comments = $4
-       WHERE user_id = $5 AND event_instance_id = $6`,
-      [satisfaction, usefulness, recommendation, comments, user_id, event_id]
-    );
-
-    // FIX 2: If the user wrote a milestone, save it to the 'milestones' table
-    if (milestones && milestones.trim() !== '') {
-        await pool.query(
-            'INSERT INTO milestones (user_id, title, milestone_date) VALUES ($1, $2, NOW())',
-            [user_id, milestones.trim()]
-        );
+      // If they haven't registered yet, create a new registration record with survey data
+      await pool.query(
+        `INSERT INTO registrations (
+          user_id,
+          event_instance_id,
+          status,
+          survey_satisfaction,
+          survey_usefulness,
+          survey_instructor,
+          survey_recommendation,
+          survey_overall,
+          survey_comments
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [
+          targetUserId,
+          event_id,
+          status,
+          parseInt(satisfaction),
+          parseInt(usefulness),
+          parseInt(instructor),
+          parseInt(recommendation),
+          parseInt(overall),
+          comments
+        ]
+      );
+    } else {
+      // Update the existing registration record with the survey scores
+      await pool.query(
+        `UPDATE registrations
+         SET status = $1,
+             survey_satisfaction = $2,
+             survey_usefulness = $3,
+             survey_instructor = $4,
+             survey_recommendation = $5,
+             survey_overall = $6,
+             survey_comments = $7
+         WHERE user_id = $8 AND event_instance_id = $9`,
+        [
+          status,
+          parseInt(satisfaction),
+          parseInt(usefulness),
+          parseInt(instructor),
+          parseInt(recommendation),
+          parseInt(overall),
+          comments,
+          targetUserId,
+          event_id
+        ]
+      );
     }
 
     res.redirect('/surveys');
@@ -978,11 +1023,12 @@ app.post('/surveys', requireLogin, async (req, res) => {
   }
 });
 
-// ------------------- EDIT SURVEY (ADMIN ONLY) -------------------
+// Edit Survey - GET route to show the edit form
 app.get('/edit-survey/:id', requireLogin, requireManager, async (req, res) => {
   const registration_id = req.params.id;
+ 
   try {
-    // Get the registration/survey data
+    // Get the existing survey/registration data
     const surveyResult = await pool.query(`
       SELECT
         r.registration_id,
@@ -991,93 +1037,103 @@ app.get('/edit-survey/:id', requireLogin, requireManager, async (req, res) => {
         r.status,
         r.survey_satisfaction,
         r.survey_usefulness,
+        r.survey_instructor,
         r.survey_recommendation,
+        r.survey_overall,
         r.survey_comments,
         u.first_name,
         u.last_name,
-        me.event_name AS event_title
+        me.event_name,
+        ei.start_time
       FROM registrations r
       JOIN users u ON r.user_id = u.user_id
       JOIN event_instances ei ON r.event_instance_id = ei.event_instance_id
       JOIN master_events me ON ei.master_event_id = me.master_event_id
       WHERE r.registration_id = $1
     `, [registration_id]);
-
+   
     if (surveyResult.rows.length === 0) {
       return res.status(404).send('Survey not found');
     }
-
-    const survey = surveyResult.rows[0];
-
-    // Get all events for dropdown (if needed for future expansion)
+   
+    // Get all events for the dropdown
     const eventsResult = await pool.query(`
       SELECT
         ei.event_instance_id AS event_id,
-        me.event_name AS title
+        me.event_name AS title,
+        ei.start_time AS event_date
       FROM event_instances ei
       JOIN master_events me ON ei.master_event_id = me.master_event_id
-      ORDER BY me.event_name
+      ORDER BY ei.start_time DESC
     `);
-
-    res.render('edit-survey', {
+   
+    res.render('edit_survey', {
       user: req.session.user,
-      survey: survey,
+      survey: surveyResult.rows[0],
       events: eventsResult.rows
     });
+   
   } catch (err) {
-    console.error('Error loading survey for editing:', err);
+    console.error('❌ Error loading survey for edit:', err);
     res.status(500).send('Error loading survey');
   }
 });
 
+// Edit Survey - POST route to update the survey
 app.post('/edit-survey/:id', requireLogin, requireManager, async (req, res) => {
   const registration_id = req.params.id;
-  const { status, satisfaction, usefulness, recommendation, comments } = req.body;
+  const { user_id, event_id, satisfaction, usefulness, instructor, recommendation, overall, comments } = req.body;
  
   try {
-    await pool.query(
-      `UPDATE registrations
-       SET status = $1,
-           survey_satisfaction = $2,
-           survey_usefulness = $3,
-           survey_recommendation = $4,
-           survey_comments = $5
-       WHERE registration_id = $6`,
-      [status, satisfaction || null, usefulness || null, recommendation || null, comments || null, registration_id]
-    );
+    // Validate that the user exists if user_id was changed
+    const userCheck = await pool.query('SELECT user_id FROM users WHERE user_id = $1', [parseInt(user_id)]);
+    if (userCheck.rows.length === 0) {
+      return res.status(400).send(`Error: User ID ${user_id} does not exist in the database.`);
+    }
+   
+    // Update the registration/survey
+    await pool.query(`
+      UPDATE registrations
+      SET user_id = $1,
+          event_instance_id = $2,
+          status = $3,
+          survey_satisfaction = $4,
+          survey_usefulness = $5,
+          survey_instructor = $6,
+          survey_recommendation = $7,
+          survey_overall = $8,
+          survey_comments = $9
+      WHERE registration_id = $10
+    `, [
+      parseInt(user_id),
+      parseInt(event_id),
+      'attended',
+      parseInt(satisfaction),
+      parseInt(usefulness),
+      parseInt(instructor),
+      parseInt(recommendation),
+      parseInt(overall),
+      comments,
+      registration_id
+    ]);
+   
     res.redirect('/surveys');
+   
   } catch (err) {
-    console.error('Error updating survey:', err);
+    console.error('❌ Error updating survey:', err);
     res.status(500).send('Error updating survey');
   }
 });
 
-// ------------------- NEW SURVEY FORM -------------------
-app.get('/survey_new', requireLogin, async (req, res) => {
-  try {
-    const events = await pool.query(`
-        SELECT
-            ei.event_instance_id AS event_id,
-            me.event_name || ' - ' || TO_CHAR(ei.start_time, 'MM/DD/YYYY') AS title
-        FROM event_instances ei
-        JOIN master_events me ON ei.master_event_id = me.master_event_id
-        ORDER BY me.event_name, ei.start_time
-    `);
-    res.render('survey_new', { user: req.session.user, events: events.rows });
-  } catch (err) {
-    console.error('Error loading new survey form:', err);
-    res.status(500).send('Error loading survey form.');
-  }
-});
-
-// ------------------- DELETE SURVEY (ADMIN ONLY) -------------------
+// Delete Survey - POST route
 app.post('/delete-survey/:id', requireLogin, requireManager, async (req, res) => {
   const registration_id = req.params.id;
+ 
   try {
     await pool.query('DELETE FROM registrations WHERE registration_id = $1', [registration_id]);
     res.redirect('/surveys');
   } catch (err) {
-    console.error('Error deleting survey:', err);
+    console.error('❌ Error deleting survey:', err);
     res.status(500).send('Error deleting survey');
   }
 });
@@ -1085,29 +1141,55 @@ app.post('/delete-survey/:id', requireLogin, requireManager, async (req, res) =>
 // ==================== MILESTONES ====================
 
 // 1. LIST Milestones
-app.get('/milestones', requireLogin, async (req, res) => {
+// ---------------------------------------------
+// Milestones Page Route
+// ---------------------------------------------
+app.get('/milestones', async (req, res) => {
   try {
-    // UPDATED: Everyone sees all milestones
-    const query = `
-        SELECT m.milestone_id, m.title, m.milestone_date, u.first_name, u.last_name
-        FROM milestones m
-        JOIN users u ON m.user_id = u.user_id
-        ORDER BY m.milestone_date DESC
-    `;
+    // 1. Fetch milestones (existing code)
+    const result = await pool.query(`
+      SELECT u.user_id, u.first_name, u.last_name, m.title, m.milestone_date
+      FROM milestones m
+      JOIN users u ON m.user_id = u.user_id
+      ORDER BY u.last_name, m.milestone_date;
+    `);
 
-    const result = await pool.query(query);
-    
-    // We do NOT need to fetch 'users' here anymore because the dropdown is on the add page
-    res.render('milestones', { 
-        user: req.session.user, 
-        milestones: result.rows 
+    // 2. Group milestones (existing code)
+    const grouped = {};
+    result.rows.forEach(row => {
+      if (!grouped[row.user_id]) {
+        grouped[row.user_id] = {
+          user_id: row.user_id,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          milestones: []
+        };
+      }
+      grouped[row.user_id].milestones.push({
+        title: row.title,
+        date: row.milestone_date
+      });
+    });
+    const usersWithMilestones = Object.values(grouped);
+
+    // 3. NEW: Fetch list of users for the dropdown
+    // We need this because the "Add Milestone" form is on this page!
+    const usersRes = await pool.query('SELECT user_id, first_name, last_name FROM users ORDER BY last_name');
+    const participants = usersRes.rows; 
+
+    res.render('milestones', {
+      user: req.session.user,        // The single logged-in admin
+      usersWithMilestones,           // The list of completed milestones
+      participants                   // <--- NEW: The array for the dropdown
     });
 
   } catch (err) {
     console.error('Error loading milestones:', err);
-    res.status(500).send('Error loading milestones');
+    res.status(500).send('Server Error');
   }
 });
+
+
 
 // 2. ADD Milestone Form (GET)
 app.get('/milestones/add', requireLogin, requireManager, async (req, res) => {
