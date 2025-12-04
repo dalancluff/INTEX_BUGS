@@ -368,21 +368,20 @@ app.post('/add_user', requireLogin, requireManager, async (req, res) => {
   }
 });
 
-app.get('/edit-user/:id', requireLogin, requireManager, async (req, res) => {
+app.get('/edit-user/:id', requireLogin, requireSelfOrManager, async (req, res) => {
   const id = req.params.id;
   try {
     const result = await pool.query('SELECT * FROM users WHERE user_id = $1', [id]);
     if (result.rows.length > 0)
-      // FIX HERE: Change 'participant' to 'user'
       res.render('edit-user', { user: result.rows[0] }); 
     else res.send('User not found');
   } catch (err) {
     console.error(err);
-    res.send('Error loading user'); // Cleaned up the message too
+    res.send('Error loading user'); 
   }
 });
 
-app.post('/edit-user/:id', requireLogin, requireManager, async (req, res) => {
+app.post('/edit-user/:id', requireLogin, requireSelfOrManager, async (req, res) => {
   const id = req.params.id;
   const { first_name, last_name, email, phone, school_or_employer, field_of_interest } = req.body;
   try {
@@ -796,131 +795,168 @@ app.post('/donations/delete/:id', requireLogin, requireManager, async (req, res)
 // ------------------- SURVEYS -------------------
 
 // Display all registrations and survey data (Manager) or user's own (User)
+// Display all registrations and survey data (Manager) or user's own (User)
 app.get('/surveys', requireLogin, async (req, res) => {
   try {
-    const { search = '', date = '', overall = '' } = req.query;
-   
-    // Base SQL fragment for all registrations (surveys)
-    // Only include rows where at least one survey field has been filled out
+    const search = req.query.search || "";
+    const date = req.query.date || "";
+    const satisfaction = req.query.satisfaction || "";
+    let params = [];
+
+
+    // Base query selects all necessary columns
     const baseQuery = `
-        SELECT
-            r.registration_id,
-            r.status AS registration_status,
-            r.check_in_time,
-            r.survey_satisfaction,
-            r.survey_usefulness,
-            r.survey_instructor,
-            r.survey_recommendation,
-            r.survey_overall,
-            r.survey_comments,
-            u.user_id,
-            u.first_name,
-            u.last_name,
-            me.event_name AS event_title,
-            ei.start_time AS event_date
-        FROM registrations r
-        JOIN users u ON r.user_id = u.user_id
-        JOIN event_instances ei ON r.event_instance_id = ei.event_instance_id
-        JOIN master_events me ON ei.master_event_id = me.master_event_id
-        WHERE (
-            r.survey_satisfaction IS NOT NULL OR
-            r.survey_usefulness IS NOT NULL OR
-            r.survey_instructor IS NOT NULL OR
-            r.survey_recommendation IS NOT NULL OR
-            r.survey_overall IS NOT NULL OR
-            r.survey_comments IS NOT NULL
-        )
-    `;
-   
-    const where = [];
-    const params = [];
-    let p = 1;
-   
+      SELECT
+          r.registration_id,
+          r.status AS registration_status,
+          r.check_in_time,
+          r.survey_satisfaction,
+          
+          -- Add these 4 lines to fix the blank spaces:
+          r.survey_usefulness,
+          r.survey_instructor,
+          r.survey_recommendation,
+          r.survey_overall,
+          
+          r.survey_comments,
+          u.user_id,
+          u.first_name,
+          u.last_name,
+          me.event_name AS event_title,
+          ei.start_time AS event_date
+      FROM registrations r
+      JOIN users u ON r.user_id = u.user_id
+      JOIN event_instances ei ON r.event_instance_id = ei.event_instance_id
+      JOIN master_events me ON ei.master_event_id = me.master_event_id
+  `;
+
+
+    let finalQuery = baseQuery;
+    let whereConditions = [];
+
+
+    // ================== ADMIN LOGIC ==================
     if (req.session.user.role === 'admin') {
-      // Admin sees all records, but apply filters
-     
-      if (search && search.trim() !== '') {
-        where.push(`(u.first_name ILIKE $${p} OR u.last_name ILIKE $${p} OR me.event_name ILIKE $${p} OR r.status ILIKE $${p} OR r.survey_comments ILIKE $${p})`);
-        params.push(`%${search.trim()}%`);
-        p++;
+      let paramIndex = 1;
+
+
+      if (search) {
+        whereConditions.push(`(
+          LOWER(u.first_name) LIKE LOWER($${paramIndex})
+          OR LOWER(u.last_name) LIKE LOWER($${paramIndex})
+          OR LOWER(me.event_name) LIKE LOWER($${paramIndex})
+          OR LOWER(r.status) LIKE LOWER($${paramIndex})
+          OR CAST(r.registration_id AS TEXT) LIKE $${paramIndex}
+          OR LOWER(r.survey_comments) LIKE LOWER($${paramIndex})
+        )`);
+        params.push(`%${search}%`);
+        paramIndex++;
       }
-     
-      if (date && date.trim() !== '') {
-        where.push(`DATE(ei.start_time) = $${p}`);
+
+
+      if (date) {
+        whereConditions.push(`DATE(ei.start_time) = $${paramIndex}`);
         params.push(date);
-        p++;
+        paramIndex++;
       }
-     
-      if (overall && overall !== '' && overall !== 'N/A') {
-        where.push(`r.survey_overall = $${p}`);
-        params.push(parseInt(overall));
-        p++;
-      } else if (overall === 'N/A') {
-        where.push(`r.survey_overall IS NULL`);
+
+
+      if (satisfaction) {
+        if (satisfaction === 'N/A') {
+          whereConditions.push(`r.survey_satisfaction IS NULL`);
+        } else {
+          whereConditions.push(`r.survey_satisfaction = $${paramIndex}`);
+          params.push(parseInt(satisfaction));
+          paramIndex++;
+        }
       }
-     
-      const sql = `
-        ${baseQuery}
-        ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-        ORDER BY r.created_at DESC
-      `;
-     
-      const result = await pool.query(sql, params);
-      res.render('surveys', {
+
+
+      if (whereConditions.length > 0) {
+        finalQuery += ` WHERE ${whereConditions.join(' AND ')}`;
+      }
+
+
+      // FIX: Sort by registration_id instead of created_at
+      finalQuery += ` ORDER BY r.registration_id DESC`;
+
+
+      const result = await pool.query(finalQuery, params);
+
+
+      return res.render('surveys', {
         user: req.session.user,
         surveys: result.rows,
         search,
         date,
-        overall
-      });
-     
-    } else {
-      // Regular user sees only their own records
-      where.push(`r.user_id = $${p}`);
-      params.push(req.session.user.id);
-      p++;
-     
-      if (search && search.trim() !== '') {
-        where.push(`(me.event_name ILIKE $${p} OR r.status ILIKE $${p} OR r.survey_comments ILIKE $${p})`);
-        params.push(`%${search.trim()}%`);
-        p++;
-      }
-     
-      if (date && date.trim() !== '') {
-        where.push(`DATE(ei.start_time) = $${p}`);
-        params.push(date);
-        p++;
-      }
-     
-      if (overall && overall !== '' && overall !== 'N/A') {
-        where.push(`r.survey_overall = $${p}`);
-        params.push(parseInt(overall));
-        p++;
-      } else if (overall === 'N/A') {
-        where.push(`r.survey_overall IS NULL`);
-      }
-     
-      const sql = `
-        ${baseQuery}
-        WHERE ${where.join(' AND ')}
-        ORDER BY r.created_at DESC
-      `;
-     
-      const result = await pool.query(sql, params);
-      res.render('surveys', {
-        user: req.session.user,
-        surveys: result.rows,
-        search,
-        date,
-        overall
+        satisfaction
       });
     }
+
+
+    // ================== NON-ADMIN LOGIC ==================
    
+    // 1. Restrict to current user
+    whereConditions.push(`r.user_id = $1`);
+    params.push(req.session.user.id);
+    let paramIndex = 2;
+
+
+    if (search) {
+      whereConditions.push(`(
+        LOWER(me.event_name) LIKE LOWER($${paramIndex})
+        OR LOWER(r.status) LIKE LOWER($${paramIndex})
+        OR CAST(r.registration_id AS TEXT) LIKE $${paramIndex}
+        OR LOWER(r.survey_comments) LIKE LOWER($${paramIndex})
+      )`);
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+
+
+    if (date) {
+      whereConditions.push(`DATE(ei.start_time) = $${paramIndex}`);
+      params.push(date);
+      paramIndex++;
+    }
+
+
+    if (satisfaction) {
+      if (satisfaction === 'N/A') {
+        whereConditions.push(`r.survey_satisfaction IS NULL`);
+      } else {
+        whereConditions.push(`r.survey_satisfaction = $${paramIndex}`);
+        params.push(parseInt(satisfaction));
+        paramIndex++;
+      }
+    }
+
+
+    finalQuery += ` WHERE ${whereConditions.join(' AND ')}`;
+   
+    // FIX: Sort by registration_id instead of created_at
+    finalQuery += ` ORDER BY r.registration_id DESC`;
+
+
+    const result = await pool.query(finalQuery, params);
+
+
+    res.render('surveys', {
+      user: req.session.user,
+      surveys: result.rows,
+      search,
+      date,
+      satisfaction
+    });
+
+
   } catch (err) {
+    // This logs the specific SQL error to your VS Code terminal
     console.error('❌ Error loading registrations/surveys:', err);
     res.status(500).send('Error loading registration and survey data.');
   }
 });
+
 
 // Render form to submit a new survey (User only)
 app.get('/survey_new', requireLogin, async (req, res) => {
@@ -1067,7 +1103,7 @@ app.get('/edit-survey/:id', requireLogin, requireManager, async (req, res) => {
       ORDER BY ei.start_time DESC
     `);
    
-    res.render('edit_survey', {
+    res.render('edit-survey', {
       user: req.session.user,
       survey: surveyResult.rows[0],
       events: eventsResult.rows
@@ -1251,3 +1287,4 @@ app.listen(port, () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
+
