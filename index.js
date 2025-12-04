@@ -296,7 +296,8 @@ app.get('/participants', requireLogin, async (req, res) => {
       let where = [];
 
       if (search && search.trim() !== '') {
-        where.push(`(first_name ILIKE $${p} OR last_name ILIKE $${p} OR email ILIKE $${p})`);
+        // --- MODIFIED: Added Full Name Search (first_name || ' ' || last_name) ---
+        where.push(`(first_name ILIKE $${p} OR last_name ILIKE $${p} OR email ILIKE $${p} OR (first_name || ' ' || last_name) ILIKE $${p})`);
         params.push(`%${search.trim()}%`);
         p++;
       }
@@ -841,9 +842,11 @@ app.get('/surveys', requireLogin, async (req, res) => {
 
 
       if (search) {
+        // --- MODIFIED: Added Full Name Search (u.first_name || ' ' || u.last_name) ---
         whereConditions.push(`(
           LOWER(u.first_name) LIKE LOWER($${paramIndex})
           OR LOWER(u.last_name) LIKE LOWER($${paramIndex})
+          OR LOWER(u.first_name || ' ' || u.last_name) LIKE LOWER($${paramIndex}) 
           OR LOWER(me.event_name) LIKE LOWER($${paramIndex})
           OR LOWER(r.status) LIKE LOWER($${paramIndex})
           OR CAST(r.registration_id AS TEXT) LIKE $${paramIndex}
@@ -1176,21 +1179,37 @@ app.post('/delete-survey/:id', requireLogin, requireManager, async (req, res) =>
 
 // ==================== MILESTONES ====================
 
-// 1. LIST Milestones
+
 // ---------------------------------------------
 // Milestones Page Route
 // ---------------------------------------------
+// 1. LIST Milestones
+// 1. LIST ALL (Main Page)
 app.get('/milestones', async (req, res) => {
   try {
-    // 1. Fetch milestones (existing code)
-    const result = await pool.query(`
-      SELECT u.user_id, u.first_name, u.last_name, m.title, m.milestone_date
-      FROM milestones m
-      JOIN users u ON m.user_id = u.user_id
-      ORDER BY u.last_name, m.milestone_date;
-    `);
+    const { search = '' } = req.query; 
+    let whereConditions = [];
+    let params = [];
+    let paramCounter = 1;
 
-    // 2. Group milestones (existing code)
+    if (search && search.trim() !== '') {
+        whereConditions.push(`(u.first_name ILIKE $${paramCounter} OR u.last_name ILIKE $${paramCounter})`);
+        params.push(`%${search.trim()}%`);
+        paramCounter++;
+    }
+
+    // Important: We select distinct users first, then we can aggregate or loop.
+    // However, to keep your existing structure, let's just query everything and group in JS.
+    const sql = `
+      SELECT u.user_id, u.first_name, u.last_name, m.milestone_id, m.title, m.milestone_date
+      FROM users u
+      LEFT JOIN milestones m ON u.user_id = m.user_id
+      ${whereConditions.length ? 'WHERE ' + whereConditions.join(' AND ') : ''}
+      ORDER BY u.last_name, m.milestone_date DESC
+    `;
+    
+    const result = await pool.query(sql, params);
+
     const grouped = {};
     result.rows.forEach(row => {
       if (!grouped[row.user_id]) {
@@ -1201,22 +1220,19 @@ app.get('/milestones', async (req, res) => {
           milestones: []
         };
       }
-      grouped[row.user_id].milestones.push({
-        title: row.title,
-        date: row.milestone_date
-      });
+      if (row.milestone_id) { // Only add if milestone exists
+        grouped[row.user_id].milestones.push({
+          milestone_id: row.milestone_id,
+          title: row.title,
+          date: row.milestone_date
+        });
+      }
     });
-    const usersWithMilestones = Object.values(grouped);
-
-    // 3. NEW: Fetch list of users for the dropdown
-    // We need this because the "Add Milestone" form is on this page!
-    const usersRes = await pool.query('SELECT user_id, first_name, last_name FROM users ORDER BY last_name');
-    const participants = usersRes.rows; 
 
     res.render('milestones', {
-      user: req.session.user,        // The single logged-in admin
-      usersWithMilestones,           // The list of completed milestones
-      participants                   // <--- NEW: The array for the dropdown
+      user: req.session.user,        
+      usersWithMilestones: Object.values(grouped),           
+      filters: { search }            
     });
 
   } catch (err) {
@@ -1225,49 +1241,105 @@ app.get('/milestones', async (req, res) => {
   }
 });
 
-
-
-// 2. ADD Milestone Form (GET)
-app.get('/milestones/add', requireLogin, requireManager, async (req, res) => {
+// 2. MANAGE MILESTONES (New Route: List for Specific Student)
+app.get('/milestones/manage/:user_id', requireLogin, requireManager, async (req, res) => {
+    const userId = req.params.user_id;
     try {
-        // Fetch users for the dropdown
-        const usersRes = await pool.query('SELECT user_id, first_name, last_name FROM users WHERE role = $1 ORDER BY last_name', ['user']);
-        
-        res.render('add_milestone', { 
+        // Fetch User Info
+        const userRes = await pool.query('SELECT user_id, first_name, last_name FROM users WHERE user_id = $1', [userId]);
+        if (userRes.rows.length === 0) return res.status(404).send("User not found");
+
+        // Fetch Milestones
+        const milesRes = await pool.query('SELECT * FROM milestones WHERE user_id = $1 ORDER BY milestone_date DESC', [userId]);
+
+        res.render('manage_milestones', {
             user: req.session.user,
-            users: usersRes.rows 
+            student: userRes.rows[0],
+            milestones: milesRes.rows
         });
     } catch (err) {
-        console.error('Error loading add milestone form:', err);
-        res.status(500).send('Error loading form');
+        console.error('Error loading manage milestones:', err);
+        res.status(500).send('Server Error');
     }
 });
 
-// 3. CREATE Milestone (POST)
+// 3. ADD MILESTONE (POST)
+// Updated to redirect back to the Manage page
 app.post('/milestones/add', requireLogin, requireManager, async (req, res) => {
+    const { user_id, title, milestone_date } = req.body;
     try {
-        const { user_id, title, milestone_date } = req.body;
-        
-        // Handle optional date
         const dateVal = milestone_date ? milestone_date : null;
-
         await pool.query(
             'INSERT INTO milestones (user_id, title, milestone_date) VALUES ($1, $2, $3)',
             [user_id, title, dateVal]
         );
-        res.redirect('/milestones');
+        // Redirect back to that student's list
+        res.redirect(`/milestones/manage/${user_id}`);
     } catch (err) {
         console.error('Error adding milestone:', err);
         res.status(500).send('Error adding milestone');
     }
 });
 
-// 4. DELETE Milestone (POST) - Now uses ID in URL for consistency
-app.post('/milestones/delete/:id', requireLogin, requireManager, async (req, res) => {
+// 4. EDIT FORM (GET) - Remains similar, but Cancel button in EJS (not shown here) should go back
+app.get('/milestones/edit/:id', requireLogin, requireManager, async (req, res) => {
+    // ... (Use the code provided in the previous turn) ... 
+    // Just ensure the "Cancel" button in edit_milestone.ejs points to /milestones/manage/USER_ID
+    // To do that, passing the user_id in the render is sufficient (which we do).
+    
+    // Quick Fix: Re-include the route here for clarity
+    const milestoneId = req.params.id;
     try {
-        const milestoneId = req.params.id;
-        await pool.query('DELETE FROM milestones WHERE milestone_id = $1', [milestoneId]);
-        res.redirect('/milestones');
+        const result = await pool.query(`
+            SELECT m.*, u.first_name, u.last_name 
+            FROM milestones m JOIN users u ON m.user_id = u.user_id 
+            WHERE m.milestone_id = $1`, [milestoneId]);
+        
+        if (result.rows.length === 0) return res.status(404).send('Not Found');
+
+        // Fetch all users if you still want to allow reassignment, 
+        // OR just the current one if not. Assuming keep reassignment:
+        const usersRes = await pool.query('SELECT user_id, first_name, last_name FROM users ORDER BY last_name');
+
+        res.render('edit_milestone', { 
+            user: req.session.user, 
+            milestone: result.rows[0],
+            users: usersRes.rows 
+        });
+    } catch (err) { console.error(err); res.status(500).send("Error"); }
+});
+
+// 5. UPDATE MILESTONE (POST)
+app.post('/milestones/edit/:id', requireLogin, requireManager, async (req, res) => {
+    const milestoneId = req.params.id;
+    const { user_id, title, milestone_date } = req.body;
+    try {
+        const dateVal = milestone_date ? milestone_date : null;
+        await pool.query(
+            'UPDATE milestones SET user_id=$1, title=$2, milestone_date=$3 WHERE milestone_id=$4',
+            [user_id, title, dateVal, milestoneId]
+        );
+        // Redirect back to the student's manage page
+        res.redirect(`/milestones/manage/${user_id}`);
+    } catch (err) {
+        console.error('Error updating milestone:', err);
+        res.status(500).send('Error updating milestone');
+    }
+});
+
+// 6. DELETE MILESTONE (POST)
+app.post('/milestones/delete/:id', requireLogin, requireManager, async (req, res) => {
+    const milestoneId = req.params.id;
+    try {
+        // We use RETURNING user_id so we know where to redirect
+        const result = await pool.query('DELETE FROM milestones WHERE milestone_id = $1 RETURNING user_id', [milestoneId]);
+        
+        if (result.rows.length > 0) {
+            const userId = result.rows[0].user_id;
+            res.redirect(`/milestones/manage/${userId}`);
+        } else {
+            res.redirect('/milestones');
+        }
     } catch (err) {
         console.error('Error deleting milestone:', err);
         res.status(500).send('Error deleting milestone');
@@ -1287,4 +1359,3 @@ app.listen(port, () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
-
