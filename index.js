@@ -296,8 +296,14 @@ app.get('/participants', requireLogin, async (req, res) => {
       let where = [];
 
       if (search && search.trim() !== '') {
-        // --- MODIFIED: Added Full Name Search (first_name || ' ' || last_name) ---
-        where.push(`(first_name ILIKE $${p} OR last_name ILIKE $${p} OR email ILIKE $${p} OR (first_name || ' ' || last_name) ILIKE $${p})`);
+        // --- MODIFIED: Added Search by ID (CAST(user_id AS TEXT)) ---
+        where.push(`(
+          first_name ILIKE $${p} 
+          OR last_name ILIKE $${p} 
+          OR email ILIKE $${p} 
+          OR (first_name || ' ' || last_name) ILIKE $${p}
+          OR CAST(user_id AS TEXT) ILIKE $${p}
+        )`);
         params.push(`%${search.trim()}%`);
         p++;
       }
@@ -597,17 +603,17 @@ app.post('/events/delete/:id', requireLogin, requireManager, async (req, res) =>
 app.get('/donations', async (req, res) => { // You might want to add 'requireLogin' here
   try {
     const result = await pool.query(`
-        SELECT 
-            d.donation_id,
-            u.first_name || ' ' || u.last_name AS donor_name,
-            d.amount,
-            d.donation_date AS date
-        FROM donations d
-        JOIN users u ON d.user_id = u.user_id
-        ORDER BY d.donation_date DESC
-        LIMIT 50
-    `);
-
+    SELECT 
+    d.donation_id,
+    d.user_id,
+    u.first_name,
+    u.last_name,
+    d.amount,
+    d.donation_date AS date
+  FROM donations d
+  JOIN users u ON d.user_id = u.user_id
+  ORDER BY d.donation_date DESC;
+`);
     const donations = result.rows.length > 0 ? result.rows : [];
 
     // UPDATED LINE BELOW:
@@ -634,12 +640,13 @@ app.get('/donation_list', requireLogin, async (req, res) => {
 
     // Base Query
     let queryText = `
-      SELECT
+      SELECT 
         d.donation_id,
-        d.amount,
-        d.donation_date AS date,
         d.user_id,
-        u.first_name || ' ' || u.last_name AS donor_name
+        u.first_name,
+        u.last_name,
+        d.amount,
+        d.donation_date AS date
       FROM donations d
       JOIN users u ON d.user_id = u.user_id
     `;
@@ -658,15 +665,17 @@ app.get('/donation_list', requireLogin, async (req, res) => {
 
     // SEARCH FILTER (Applies to everyone)
     if (search) {
-      whereClauses.push(`(
-        u.first_name ILIKE $${paramCounter}
-        OR u.last_name ILIKE $${paramCounter}
-        OR CAST(d.amount AS TEXT) ILIKE $${paramCounter}
-        OR CAST(d.donation_date AS TEXT) ILIKE $${paramCounter}
-      )`);
-      queryParams.push(`%${search}%`);
-      paramCounter++;
-    }
+  whereClauses.push(`(
+    u.first_name ILIKE $${paramCounter}
+    OR u.last_name ILIKE $${paramCounter}
+    OR (u.first_name || ' ' || u.last_name) ILIKE $${paramCounter}
+    OR CAST(d.amount AS TEXT) ILIKE $${paramCounter}
+    OR CAST(d.donation_date AS TEXT) ILIKE $${paramCounter}
+  )`);
+  queryParams.push(`%${search}%`);
+  paramCounter++;
+}
+
 
     // Combine clauses if they exist
     if (whereClauses.length > 0) {
@@ -796,53 +805,46 @@ app.post('/donations/delete/:id', requireLogin, requireManager, async (req, res)
 // ------------------- SURVEYS -------------------
 
 // Display all registrations and survey data (Manager) or user's own (User)
-// Display all registrations and survey data (Manager) or user's own (User)
+// Display all registrations and survey data
 app.get('/surveys', requireLogin, async (req, res) => {
   try {
-    const search = req.query.search || "";
-    const date = req.query.date || "";
-    const satisfaction = req.query.satisfaction || "";
+    const { search = '', date = '', satisfaction = '', page = 1 } = req.query;
+    
+    // Pagination settings (matches the logic in your EJS script)
+    const limit = 20;
+    const offset = (page - 1) * limit;
+
     let params = [];
+    let paramIndex = 1;
+    let whereConditions = [];
 
-
-    // Base query selects all necessary columns
-    const baseQuery = `
+    // Base query with FIXED ALIASES to match your EJS
+    // We use "AS registration_status" and "AS event_date" so EJS can read them
+    let baseQuery = `
       SELECT
           r.registration_id,
-          r.status AS registration_status,
+          r.status AS registration_status,   -- Fixes the blank status column
           r.check_in_time,
           r.survey_satisfaction,
-          
-          -- Add these 4 lines to fix the blank spaces:
           r.survey_usefulness,
           r.survey_instructor,
           r.survey_recommendation,
           r.survey_overall,
-          
           r.survey_comments,
           u.user_id,
           u.first_name,
           u.last_name,
           me.event_name AS event_title,
-          ei.start_time AS event_date
+          ei.start_time AS event_date        -- Fixes the N/A date column
       FROM registrations r
       JOIN users u ON r.user_id = u.user_id
       JOIN event_instances ei ON r.event_instance_id = ei.event_instance_id
       JOIN master_events me ON ei.master_event_id = me.master_event_id
-  `;
-
-
-    let finalQuery = baseQuery;
-    let whereConditions = [];
-
+    `;
 
     // ================== ADMIN LOGIC ==================
     if (req.session.user.role === 'admin') {
-      let paramIndex = 1;
-
-
       if (search) {
-        // --- MODIFIED: Added Full Name Search (u.first_name || ' ' || u.last_name) ---
         whereConditions.push(`(
           LOWER(u.first_name) LIKE LOWER($${paramIndex})
           OR LOWER(u.last_name) LIKE LOWER($${paramIndex})
@@ -855,74 +857,32 @@ app.get('/surveys', requireLogin, async (req, res) => {
         params.push(`%${search}%`);
         paramIndex++;
       }
+    } 
+    // ================== NON-ADMIN LOGIC ==================
+    else {
+      // Restrict to current user
+      whereConditions.push(`r.user_id = $${paramIndex}`);
+      params.push(req.session.user.id);
+      paramIndex++;
 
-
-      if (date) {
-        whereConditions.push(`DATE(ei.start_time) = $${paramIndex}`);
-        params.push(date);
+      if (search) {
+        whereConditions.push(`(
+          LOWER(me.event_name) LIKE LOWER($${paramIndex})
+          OR LOWER(r.status) LIKE LOWER($${paramIndex})
+          OR CAST(r.registration_id AS TEXT) LIKE $${paramIndex}
+          OR LOWER(r.survey_comments) LIKE LOWER($${paramIndex})
+        )`);
+        params.push(`%${search}%`);
         paramIndex++;
       }
-
-
-      if (satisfaction) {
-        if (satisfaction === 'N/A') {
-          whereConditions.push(`r.survey_satisfaction IS NULL`);
-        } else {
-          whereConditions.push(`r.survey_satisfaction = $${paramIndex}`);
-          params.push(parseInt(satisfaction));
-          paramIndex++;
-        }
-      }
-
-
-      if (whereConditions.length > 0) {
-        finalQuery += ` WHERE ${whereConditions.join(' AND ')}`;
-      }
-
-
-      // FIX: Sort by registration_id instead of created_at
-      finalQuery += ` ORDER BY r.registration_id DESC`;
-
-
-      const result = await pool.query(finalQuery, params);
-
-
-      return res.render('surveys', {
-        user: req.session.user,
-        surveys: result.rows,
-        search,
-        date,
-        satisfaction
-      });
     }
 
-
-    // ================== NON-ADMIN LOGIC ==================
-   
-    // 1. Restrict to current user
-    whereConditions.push(`r.user_id = $1`);
-    params.push(req.session.user.id);
-    let paramIndex = 2;
-
-
-    if (search) {
-      whereConditions.push(`(
-        LOWER(me.event_name) LIKE LOWER($${paramIndex})
-        OR LOWER(r.status) LIKE LOWER($${paramIndex})
-        OR CAST(r.registration_id AS TEXT) LIKE $${paramIndex}
-        OR LOWER(r.survey_comments) LIKE LOWER($${paramIndex})
-      )`);
-      params.push(`%${search}%`);
-      paramIndex++;
-    }
-
-
+    // Common Filters (Date and Satisfaction)
     if (date) {
       whereConditions.push(`DATE(ei.start_time) = $${paramIndex}`);
       params.push(date);
       paramIndex++;
     }
-
 
     if (satisfaction) {
       if (satisfaction === 'N/A') {
@@ -934,27 +894,36 @@ app.get('/surveys', requireLogin, async (req, res) => {
       }
     }
 
+    // Assemble the Query
+    if (whereConditions.length > 0) {
+      baseQuery += ` WHERE ${whereConditions.join(' AND ')}`;
+    }
 
-    finalQuery += ` WHERE ${whereConditions.join(' AND ')}`;
-   
-    // FIX: Sort by registration_id instead of created_at
-    finalQuery += ` ORDER BY r.registration_id DESC`;
+    baseQuery += ` ORDER BY r.registration_id DESC`;
 
+    // Add Pagination
+    baseQuery += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit, offset);
 
-    const result = await pool.query(finalQuery, params);
+    const result = await pool.query(baseQuery, params);
 
+    // --- JSON RESPONSE FOR INFINITE SCROLL ---
+    // This allows the JavaScript in your EJS file to load more rows
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      return res.json({ surveys: result.rows, user: req.session.user });
+    }
 
+    // --- HTML RESPONSE FOR PAGE LOAD ---
     res.render('surveys', {
       user: req.session.user,
       surveys: result.rows,
       search,
       date,
-      satisfaction
+      satisfaction,
+      overall: req.query.overall || '' // Added to prevent EJS error
     });
 
-
   } catch (err) {
-    // This logs the specific SQL error to your VS Code terminal
     console.error('❌ Error loading registrations/surveys:', err);
     res.status(500).send('Error loading registration and survey data.');
   }
@@ -983,17 +952,25 @@ app.get('/survey_new', requireLogin, async (req, res) => {
 
 // Handle survey submission
 app.post('/surveys', requireLogin, async (req, res) => {
-  const { event_id, status, satisfaction, usefulness, instructor, recommendation, overall, comments, user_id } = req.body;
- 
+  // 1. Use 'let' so we can modify variables
+  let { event_id, status, satisfaction, usefulness, instructor, recommendation, overall, comments, user_id } = req.body;
+
   try {
+    // 2. ROBUST STATUS LOGIC:
+    // If the form didn't send a status (it's undefined), or if the user is an admin,
+    // we force the status to 'attended'. You can't review an event you didn't attend.
+    if (!status || req.session.user.role === 'admin') {
+      status = 'attended';
+    }
+
     // Determine which user_id to use
     let targetUserId;
-   
+    
+    // If Admin AND they selected a specific user from a dropdown
     if (req.session.user.role === 'admin' && user_id) {
-      // Admin can submit surveys for other users
       targetUserId = parseInt(user_id);
     } else {
-      // Regular users submit for themselves
+      // Otherwise, it's for the logged-in user (Admin for self, or Regular User)
       targetUserId = req.session.user.id;
     }
 
@@ -1004,7 +981,7 @@ app.post('/surveys', requireLogin, async (req, res) => {
     );
 
     if (registrationCheck.rows.length === 0) {
-      // If they haven't registered yet, create a new registration record with survey data
+      // Create new registration with 'attended' status
       await pool.query(
         `INSERT INTO registrations (
           user_id,
@@ -1020,7 +997,7 @@ app.post('/surveys', requireLogin, async (req, res) => {
         [
           targetUserId,
           event_id,
-          status,
+          status, // This is now guaranteed to be 'attended'
           parseInt(satisfaction),
           parseInt(usefulness),
           parseInt(instructor),
@@ -1030,7 +1007,7 @@ app.post('/surveys', requireLogin, async (req, res) => {
         ]
       );
     } else {
-      // Update the existing registration record with the survey scores
+      // Update existing registration
       await pool.query(
         `UPDATE registrations
          SET status = $1,
@@ -1042,7 +1019,7 @@ app.post('/surveys', requireLogin, async (req, res) => {
              survey_comments = $7
          WHERE user_id = $8 AND event_instance_id = $9`,
         [
-          status,
+          status, // Guaranteed 'attended'
           parseInt(satisfaction),
           parseInt(usefulness),
           parseInt(instructor),
@@ -1183,23 +1160,37 @@ app.post('/delete-survey/:id', requireLogin, requireManager, async (req, res) =>
 // ---------------------------------------------
 // Milestones Page Route
 // ---------------------------------------------
-// 1. LIST Milestones
-// 1. LIST ALL (Main Page)
-app.get('/milestones', async (req, res) => {
+// 1. LIST Milestones (Main Page)
+
+app.get('/milestones', requireLogin, async (req, res) => {
   try {
     const { search = '' } = req.query; 
+    const currentUser = req.session.user;
+
+    // --- DEBUGGING LOGS (Check your terminal when you refresh the page) ---
+    console.log(`👤 Milestones Page Accessed by: ${currentUser.email} (ID: ${currentUser.id})`);
+    console.log(`🔑 Detected Role: '${currentUser.role}'`);
+
     let whereConditions = [];
     let params = [];
     let paramCounter = 1;
 
+    // --- SECURITY ENFORCEMENT ---
+    // If the user is NOT strictly an 'admin', force filter to their own ID.
+    if (currentUser.role !== 'admin') {
+        console.log('🔒 Non-Admin detected. Restricting data to own records.');
+        whereConditions.push(`u.user_id = $${paramCounter}`);
+        params.push(currentUser.id);
+        paramCounter++;
+    }
+
+    // Search Filter (Applies to everyone, but non-admins are already restricted to self)
     if (search && search.trim() !== '') {
         whereConditions.push(`(u.first_name ILIKE $${paramCounter} OR u.last_name ILIKE $${paramCounter})`);
         params.push(`%${search.trim()}%`);
         paramCounter++;
     }
 
-    // Important: We select distinct users first, then we can aggregate or loop.
-    // However, to keep your existing structure, let's just query everything and group in JS.
     const sql = `
       SELECT u.user_id, u.first_name, u.last_name, m.milestone_id, m.title, m.milestone_date
       FROM users u
@@ -1210,6 +1201,7 @@ app.get('/milestones', async (req, res) => {
     
     const result = await pool.query(sql, params);
 
+    // Grouping logic (same as before)
     const grouped = {};
     result.rows.forEach(row => {
       if (!grouped[row.user_id]) {
@@ -1220,7 +1212,7 @@ app.get('/milestones', async (req, res) => {
           milestones: []
         };
       }
-      if (row.milestone_id) { // Only add if milestone exists
+      if (row.milestone_id) { 
         grouped[row.user_id].milestones.push({
           milestone_id: row.milestone_id,
           title: row.title,
@@ -1230,13 +1222,13 @@ app.get('/milestones', async (req, res) => {
     });
 
     res.render('milestones', {
-      user: req.session.user,        
+      user: currentUser,        
       usersWithMilestones: Object.values(grouped),           
       filters: { search }            
     });
 
   } catch (err) {
-    console.error('Error loading milestones:', err);
+    console.error('❌ Error loading milestones:', err);
     res.status(500).send('Server Error');
   }
 });
