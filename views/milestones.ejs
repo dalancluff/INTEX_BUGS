@@ -4,144 +4,107 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Milestones | Ella Rises</title>
-
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Nunito+Sans:wght@300;400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&family=Nunito+Sans:wght@300;400;600&display=swap" rel="stylesheet" />
   <style>
-    :root{
-      --clr-peach-light:#F9F5EA;
-      --clr-pink-soft:#FFD8D1; --clr-pink:#F9AFB1; --clr-pink-dark:#CE325B;
-      --clr-sage:#9AB59D; --clr-charcoal:#3A3F3B; --clr-coral:#F4B092; --clr-blue-muted:#99B7C6;
-      --clr-purple:#978EC4; --clr-white:#fff; --clr-gray-light:#f5f5f5;
+    :root {
+      --clr-pink-dark:#ce325b;
+      --clr-white:#fff;
+      --clr-gray:#f5f5f5;
+      --clr-charcoal:#3a3f3b;
+      --clr-peach:#f9f5ea;
     }
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Nunito Sans',sans-serif;background:var(--clr-gray-light);color:var(--clr-charcoal);min-height:100vh}
-
-    /* Navbar */
-    .navbar{background:var(--clr-white);padding:1rem 2rem;box-shadow:0 2px 10px rgba(0,0,0,.1);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
-    .logo{font-family:'Montserrat',sans-serif;font-size:1.5rem;font-weight:700;color:var(--clr-pink-dark);text-decoration:none}
-    .nav-links{list-style:none;display:flex;gap:1.5rem}
-    .nav-links a{text-decoration:none;color:var(--clr-charcoal);font-weight:600}
-    .nav-links a:hover{color:var(--clr-pink-dark)}
-
-    /* Header */
-    .page-header{max-width:1000px;margin:3rem auto 2rem;background:linear-gradient(135deg,var(--clr-pink-soft) 0%,var(--clr-peach-light) 100%);
-    padding:2.5rem 1.5rem;border-radius:20px;box-shadow:0 4px 15px rgba(0,0,0,.08);text-align:center}
-    .page-header h1{font-family:'Montserrat',sans-serif;font-size:2.4rem;color:var(--clr-pink-dark);margin-bottom:.6rem}
-    .page-header p{font-size:1.1rem;opacity:.9}
-
-    /* Controls / Search */
-    .controls{max-width:1000px;margin:0 auto 1rem;display:flex;gap:.75rem;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .input{padding:.65rem .9rem;border-radius:10px;border:1px solid #e0e0e0;background:#fff;min-width:300px}
-    .btn{background:var(--clr-pink-dark);color:#fff;border:none;border-radius:999px;padding:.7rem 1.2rem;font-weight:700;cursor:pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;}
-    .btn:hover{background:#b72b51; color: #fff;}
-
-    /* Table */
-    .table-wrap{max-width:1100px;margin:1.5rem auto 3rem;background:linear-gradient(135deg,var(--clr-peach-light) 0%,var(--clr-white) 100%);
-    border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.08);padding:2rem;overflow-x:auto}
-    table{width:100%;border-collapse:collapse}
-    thead{background:var(--clr-pink);color:var(--clr-charcoal)}
-    th,td{padding:1rem;text-align:left;border-bottom:1px solid rgba(0,0,0,.05)}
-    th{font-family:'Montserrat',sans-serif;font-weight:600}
-    tr:hover{background:var(--clr-pink-soft);transition:background .3s}
-
+    body{font-family:'Nunito Sans',sans-serif;background:var(--clr-gray);color:var(--clr-charcoal);margin:0}
+    .wrap{max-width:900px;margin:2rem auto;padding:2rem;background:var(--clr-white);border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.08)}
+    h1{font-family:'Montserrat',sans-serif;color:var(--clr-pink-dark);margin:0 0 1rem}
+    h2{font-family:'Montserrat',sans-serif;color:var(--clr-pink-dark);margin-top:2rem}
+    form{margin-top:1rem}
+    .row{display:flex;gap:1rem;flex-wrap:wrap}
+    .field{flex:1 1 100%}
+    label{display:block;font-weight:700;margin:.25rem 0 .35rem}
+    input,select,button,textarea{
+      width:100%;padding:.75rem .9rem;border:1px solid #e6e6e6;border-radius:10px;font-size:1rem;background:#fff
+    }
+    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--clr-pink-dark);box-shadow:0 0 0 3px rgba(206,50,91,.12)}
+    .actions{display:flex;gap:.75rem;margin-top:1rem}
+    .btn-primary{background:var(--clr-pink-dark);color:#fff;border:none;font-weight:700;cursor:pointer}
+    .btn-primary:hover{background:linear-gradient(135deg,#ce325b,#f4b092);transform:translateY(-1px)}
+    .btn-link{background:transparent;border:1px solid #ddd;text-decoration:none;text-align:center;color:var(--clr-charcoal)}
+    table{width:100%;margin-top:2rem;border-collapse:collapse}
+    th,td{padding:.75rem;border-bottom:1px solid #eee;text-align:left}
+    th{background:var(--clr-peach);color:var(--clr-charcoal);font-weight:700}
+    tr:hover{background:#fafafa}
     .no-data{text-align:center;color:#888;font-style:italic;margin-top:1rem}
-
-    @media (max-width:768px){
-      .page-header h1{font-size:1.9rem}
-      .table-wrap{padding:1rem}
-      th,td{padding:.8rem}
-    }
   </style>
 </head>
 <body>
-  <nav class="navbar">
-    <a href="/" class="logo">Ella Rises</a>
-    <ul class="nav-links">
-      <li><a href="/dashboard">Dashboard</a></li>
-      <li><a href="/participants">Participants</a></li>
-      <li><a href="/events">Events</a></li>
-      <li><a href="/donation_list">Donations</a></li>
-      <li><a href="/logout">Logout</a></li>
-    </ul>
-  </nav>
-
-  <section class="page-header">
+  <div class="wrap">
     <h1>Milestones</h1>
-    <p>Track participant achievements and progress.</p>
-  </section>
 
-  <div class="controls">
-    <input type="text" id="milestoneSearch" class="input" placeholder="Search milestones...">
-
-    <% if (user && user.role === 'admin') { %>
-      <a href="/milestones/add" class="btn" style="background-color: var(--clr-sage);">
-        <i class="fa-solid fa-plus"></i> Add Milestone
-      </a>
+    <% if (user.role.toLowerCase().startsWith('a')) { %>
+      <p>Select a participant, enter a milestone title, and optionally choose a completion date.</p>
+      <form action="/milestones/add" method="POST"> 
+        <div class="field">
+          <label for="user_id">Participant</label>
+          <select id="user_id" name="user_id" required>
+            <option value="">— Select a participant —</option>
+            
+            <% participants.forEach(u => { %>
+              <option value="<%= u.user_id %>"><%= u.last_name %>, <%= u.first_name %></option>
+            <% }) %>
+            
+          </select>
+        </div>
+        <div class="field">
+          <label for="title">Milestone Title</label>
+          <input id="title" name="title" type="text" placeholder="e.g., Completed STEM Workshop" required />
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="milestone_date">Completion Date (optional)</label>
+            <input id="milestone_date" name="milestone_date" type="date" />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn-primary" type="submit">Save Milestone</button>
+          <a class="btn-link" href="/milestones">Cancel</a>
+        </div>
+      </form>
     <% } %>
-  </div>
 
-  <div class="table-wrap">
-    <% if (milestones.length > 0) { %>
-      <table id="milestonesTable">
-        <thead>
-          <tr>
-            <th>Participant</th>
-            <th>Milestone Title</th>
-            <th>Date Completed</th>
-            <% if (user && user.role === 'admin') { %>
-              <th style="text-align: right;">Actions</th>
-            <% } %>
-          </tr>
-        </thead>
-        <tbody>
-          <% milestones.forEach(m => { %>
-            <tr>
-              <td><strong><%= m.last_name %>, <%= m.first_name %></strong></td>
-              
-              <td><%= m.title %></td>
-              
-              <td>
-                <%= m.milestone_date ? new Date(m.milestone_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—' %>
-              </td>
+    <h2>Completed Milestones</h2>
+<% if (usersWithMilestones && usersWithMilestones.length > 0) { %>
+  <table>
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>Participant</th>
+        <th>Milestones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% usersWithMilestones.forEach(u => { %>
+        <tr>
+          <td><%= u.user_id %></td>
+          <td><%= u.last_name %>, <%= u.first_name %></td>
+          <td>
+            <ul style="margin:0; padding-left:1.2rem;">
+              <% u.milestones.forEach(m => { %>
+                <li>
+                  <%= m.title %>
+                  <% if (m.date) { %>
+                    (<%= new Date(m.date).toLocaleDateString() %>)
+                  <% } %>
+                </li>
+              <% }) %>
+            </ul>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } else { %>
+  <p class="no-data">No milestones found.</p>
+<% } %>
 
-              <% if (user && user.role === 'admin') { %>
-                <td style="text-align: right;">
-                  <form action="/milestones/delete/<%= m.milestone_id %>" method="POST" onsubmit="return confirm('Are you sure you want to delete this milestone?');" style="display: inline;">
-                    <button type="submit" class="btn" style="padding: .4rem .8rem; font-size: 0.8rem; background-color: var(--clr-charcoal);">Delete</button>
-                  </form>
-                </td>
-              <% } %>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    <% } else { %>
-      <p class="no-data">No milestones found.</p>
-    <% } %>
-  </div>
-
-  <div style="text-align:center;margin-bottom:3rem;">
-    <a class="btn" href="/dashboard">← Back to Dashboard</a>
-  </div>
-
-  <script>
-    // Client-side search logic
-    const searchInput = document.getElementById('milestoneSearch');
-    const table = document.getElementById('milestonesTable');
-    
-    if (searchInput && table) {
-      searchInput.addEventListener('keyup', function() {
-        const filter = this.value.toLowerCase();
-        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-
-        for (let i = 0; i < rows.length; i++) {
-          const text = rows[i].textContent.toLowerCase();
-          rows[i].style.display = text.includes(filter) ? "" : "none";
-        }
-      });
-    }
-  </script>
 </body>
 </html>
