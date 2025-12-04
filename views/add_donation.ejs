@@ -59,23 +59,32 @@
   </nav>
 
   <div class="container">
-    <h1>Record New Donation</h1>
-    <p class="subtitle">Enter details for a new contribution.</p>
+    <% if (currentUser && currentUser.role === 'admin') { %> 
+        <h1>Record New Donation</h1>
+        <p class="subtitle">Enter details for a new contribution.</p>
+    <% } else { %>
+        <h1>Make a Donation</h1>
+        <p class="subtitle">Thank you for supporting Ella Rises.</p>
+    <% } %>
 
     <form action="/donations/add" method="POST">
         
         <div class="form-group">
-            <label for="user_id">Donor Name</label>
-            <select id="user_id" name="user_id" required>
-                <option value="" disabled selected>Select a donor...</option>
-                <% if(typeof users !== 'undefined') { %>
-                  <% users.forEach(u => { %>
-                     <option value="<%= u.user_id %>"><%= u.first_name %> <%= u.last_name %></option>
-                  <% }) %>
-                <% } else { %>
-                  <option disabled>Error: User list not loaded</option>
-                <% } %>
-            </select>
+            <% if (currentUser && currentUser.role === 'admin') { %>
+                <label for="user_id">Donor Name</label>
+                <select id="user_id" name="user_id" required>
+                    <option value="" disabled selected>Select a donor...</option>
+                    <% if(typeof users !== 'undefined') { %>
+                      <% users.forEach(u => { %>
+                         <option value="<%= u.user_id %>"><%= u.first_name %> <%= u.last_name %></option>
+                      <% }) %>
+                    <% } %>
+                </select>
+            <% } else { %>
+                <label>Donor Name</label>
+                <input type="text" value="<%= currentUser.first_name %> <%= currentUser.last_name %>" disabled style="background-color: #f5f5f5; border: none;">
+                <input type="hidden" name="user_id" value="<%= currentUser.id %>">
+            <% } %>
         </div>
 
         <div class="form-group">
@@ -84,12 +93,19 @@
         </div>
 
         <div class="form-group">
-            <label for="donation_date">Date Received</label>
-            <input type="date" id="donation_date" name="donation_date" required>
+            <% if (currentUser && currentUser.role === 'admin') { %>
+                <label for="donation_date">Date Received</label>
+                <input type="date" id="donation_date" name="donation_date" required>
+            <% } else { %>
+                <% const today = new Date().toISOString().split('T')[0]; %>
+                <input type="hidden" name="donation_date" value="<%= today %>">
+            <% } %>
         </div>
 
         <div class="btn-group">
-            <button type="submit" class="btn btn-primary">Save Donation</button>
+            <button type="submit" class="btn btn-primary">
+                <%= (currentUser && currentUser.role === 'admin') ? 'Save Donation' : 'Donate Now' %>
+            </button>
             <a href="/donation_list" class="btn btn-secondary">Cancel</a>
         </div>
     </form>

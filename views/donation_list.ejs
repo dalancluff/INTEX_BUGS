@@ -114,10 +114,11 @@
         <i class="fa-solid fa-plus"></i> Add Donation
       </a>
     <% } else { %>
-      <a href="https://givebutter.com/EllaRises" target="_blank" class="btn" style="background-color: var(--clr-pink-dark);">
+      <a href="/donations/add" class="btn" style="background-color: var(--clr-pink-dark);">
         <i class="fa-solid fa-heart"></i> Donate Now
       </a>
-    <% } %> </div>
+    <% } %> 
+  </div>
 
   <div class="table-wrap">
     <table>
@@ -142,7 +143,7 @@
             <td><%= donation.user_id ? donation.user_id : '—' %></td>
 
             <td>
-              <%= donation.donor_name %>
+              <%= donation.first_name %> <%= donation.last_name %>
             </td>
             
             <td>$<%= Number(donation.amount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) %></td>
