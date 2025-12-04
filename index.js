@@ -296,8 +296,14 @@ app.get('/participants', requireLogin, async (req, res) => {
       let where = [];
 
       if (search && search.trim() !== '') {
-        // --- MODIFIED: Added Full Name Search (first_name || ' ' || last_name) ---
-        where.push(`(first_name ILIKE $${p} OR last_name ILIKE $${p} OR email ILIKE $${p} OR (first_name || ' ' || last_name) ILIKE $${p})`);
+        // --- MODIFIED: Added Search by ID (CAST(user_id AS TEXT)) ---
+        where.push(`(
+          first_name ILIKE $${p} 
+          OR last_name ILIKE $${p} 
+          OR email ILIKE $${p} 
+          OR (first_name || ' ' || last_name) ILIKE $${p}
+          OR CAST(user_id AS TEXT) ILIKE $${p}
+        )`);
         params.push(`%${search.trim()}%`);
         p++;
       }
