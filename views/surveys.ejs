@@ -81,34 +81,6 @@
 
   <section class="page-header">
     <h1>Post-Event Surveys</h1>
-    
-    <form method="GET" action="/surveys" class="filter-container">
-      <input 
-        type="text" 
-        name="search" 
-        placeholder="Search by name, event, status, comments…" 
-        value="<%= typeof search !== 'undefined' ? search : '' %>"
-      >
-      
-      <input 
-        type="date" 
-        name="date" 
-        value="<%= typeof date !== 'undefined' ? date : '' %>"
-      >
-      
-      <select name="satisfaction">
-        <option value="">All Satisfaction</option>
-        <option value="1" <%= typeof satisfaction !== 'undefined' && satisfaction === '1' ? 'selected' : '' %>>1/5</option>
-        <option value="2" <%= typeof satisfaction !== 'undefined' && satisfaction === '2' ? 'selected' : '' %>>2/5</option>
-        <option value="3" <%= typeof satisfaction !== 'undefined' && satisfaction === '3' ? 'selected' : '' %>>3/5</option>
-        <option value="4" <%= typeof satisfaction !== 'undefined' && satisfaction === '4' ? 'selected' : '' %>>4/5</option>
-        <option value="5" <%= typeof satisfaction !== 'undefined' && satisfaction === '5' ? 'selected' : '' %>>5/5</option>
-        <option value="N/A" <%= typeof satisfaction !== 'undefined' && satisfaction === 'N/A' ? 'selected' : '' %>>N/A</option>
-      </select>
-      
-      <button type="submit" class="btn">Search</button>
-    </form>
-
     <% 
         const isAdmin = (user && user.role === 'admin') || (typeof currentUser !== 'undefined' && currentUser.role === 'admin'); 
     %>
@@ -125,16 +97,17 @@
       
       <input class="input" type="date" name="date" value="<%= (typeof date !== 'undefined' ? date : '') %>">
       
-      <select class="select" name="overall">
-        <option value="">All Scores</option>
-        <option value="5" <%= typeof overall !== 'undefined' && overall === '5' ? 'selected' : '' %>>5/5 - Excellent</option>
-        <option value="4" <%= typeof overall !== 'undefined' && overall === '4' ? 'selected' : '' %>>4/5 - Good</option>
-        <option value="3" <%= typeof overall !== 'undefined' && overall === '3' ? 'selected' : '' %>>3/5 - Average</option>
-        <option value="2" <%= typeof overall !== 'undefined' && overall === '2' ? 'selected' : '' %>>2/5 - Poor</option>
-        <option value="1" <%= typeof overall !== 'undefined' && overall === '1' ? 'selected' : '' %>>1/5 - Terrible</option>
+      <select class="select" name="satisfaction">
+        <option value="">All Satisfaction</option>
+        <option value="5" <%= typeof satisfaction !== 'undefined' && satisfaction == '5' ? 'selected' : '' %>>5/5 - Excellent</option>
+        <option value="4" <%= typeof satisfaction !== 'undefined' && satisfaction == '4' ? 'selected' : '' %>>4/5 - Good</option>
+        <option value="3" <%= typeof satisfaction !== 'undefined' && satisfaction == '3' ? 'selected' : '' %>>3/5 - Average</option>
+        <option value="2" <%= typeof satisfaction !== 'undefined' && satisfaction == '2' ? 'selected' : '' %>>2/5 - Poor</option>
+        <option value="1" <%= typeof satisfaction !== 'undefined' && satisfaction == '1' ? 'selected' : '' %>>1/5 - Terrible</option>
+        <option value="N/A" <%= typeof satisfaction !== 'undefined' && satisfaction === 'N/A' ? 'selected' : '' %>>N/A</option>
       </select>
       
-      <button class="btn" type="submit">Filter</button>
+      <button class="btn" type="submit">Search</button>
     </form>
    
     <a href="/survey_new" class="btn" style="background-color: var(--clr-sage); margin-left: auto;">
@@ -173,7 +146,7 @@
                     <% if (isAdmin) { %>
                         <td class="col-nowrap"><strong><%= r.last_name %>, <%= r.first_name %></strong></td>
                     <% } %>
-     
+      
                     <td><%= r.event_title %></td>
                 
                     <td class="col-nowrap"><%= r.event_date ? new Date(r.event_date).toLocaleDateString() : 'N/A' %></td>
@@ -221,7 +194,8 @@
   </button>
 
   <script>
-    const userIsAdmin = isAdmin;
+    // Fix: Check user role directly here to avoid scope errors
+    const userIsAdmin = (typeof user !== 'undefined' && user && user.role === 'admin') ? 'true' : 'false';
   </script>
 
   <script>
@@ -235,7 +209,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const currentSearch = urlParams.get('search') || '';
     const currentDate = urlParams.get('date') || '';
-    const currentOverall = urlParams.get('overall') || '';
+    const currentSatisfaction = urlParams.get('satisfaction') || '';
 
     window.onscroll = function() {
       if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
@@ -260,11 +234,12 @@
         page++; 
 
         try {
-            const response = await fetch(`/surveys?page=${page}&search=${currentSearch}&date=${currentDate}&overall=${currentOverall}`, {
+            // Updated fetch URL to use 'satisfaction' instead of 'overall'
+            const response = await fetch(`/surveys?page=${page}&search=${currentSearch}&date=${currentDate}&satisfaction=${currentSatisfaction}`, {
                 headers: { 'Accept': 'application/json' }
             });
             const data = await response.json();
-           
+            
             if (data.surveys && data.surveys.length > 0) {
                 appendRows(data.surveys, userIsAdmin);
             } else {
