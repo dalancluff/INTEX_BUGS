@@ -75,7 +75,7 @@
   <div class="controls">
     <input type="text" id="milestoneSearch" class="input" placeholder="Search milestones...">
 
-    <% if (user.role.toLowerCase().startsWith('a')) { %>
+    <% if (user && user.role === 'admin') { %>
       <a href="/milestones/add" class="btn" style="background-color: var(--clr-sage);">
         <i class="fa-solid fa-plus"></i> Add Milestone
       </a>
@@ -90,7 +90,7 @@
             <th>Participant</th>
             <th>Milestone Title</th>
             <th>Date Completed</th>
-            <% if (user.role.toLowerCase().startsWith('a')) { %>
+            <% if (user && user.role === 'admin') { %>
               <th style="text-align: right;">Actions</th>
             <% } %>
           </tr>
@@ -106,7 +106,7 @@
                 <%= m.milestone_date ? new Date(m.milestone_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—' %>
               </td>
 
-              <% if (user.role.toLowerCase().startsWith('a')) { %>
+              <% if (user && user.role === 'admin') { %>
                 <td style="text-align: right;">
                   <form action="/milestones/delete/<%= m.milestone_id %>" method="POST" onsubmit="return confirm('Are you sure you want to delete this milestone?');" style="display: inline;">
                     <button type="submit" class="btn" style="padding: .4rem .8rem; font-size: 0.8rem; background-color: var(--clr-charcoal);">Delete</button>

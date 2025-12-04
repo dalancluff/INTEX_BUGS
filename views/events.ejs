@@ -127,9 +127,8 @@
         <option value="STEM" <%= (filters && filters.category === 'STEM') ? 'selected' : '' %>>STEM</option>
         <option value="Arts" <%= (filters && filters.category === 'Arts') ? 'selected' : '' %>>Arts</option>
         <option value="Leadership" <%= (filters && filters.category === 'Leadership') ? 'selected' : '' %>>Leadership</option>
-        <option value="Both" <%= (filters && filters.category === 'Both') ? 'selected' : '' %>>Both</option>
       </select>
-      <button class="btn" type="submit">Apply</button>
+      <button class="btn" type="submit">Search</button>
     </form>
    
     <% if (user && user.role === 'admin') { %>
