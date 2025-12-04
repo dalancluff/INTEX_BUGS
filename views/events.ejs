@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Events | Ella Rises</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Nunito+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root{
+      --clr-peach-light:#F9F5EA;
+      --clr-pink-soft:#FFD8D1; --clr-pink:#F9AFB1; --clr-pink-dark:#CE325B;
+      --clr-sage:#9AB59D; --clr-charcoal:#3A3F3B; --clr-coral:#F4B092; --clr-blue-muted:#99B7C6;
+      --clr-purple:#978EC4; --clr-white:#fff; --clr-gray-light:#f5f5f5;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Nunito Sans',sans-serif;background:var(--clr-gray-light);color:var(--clr-charcoal);min-height:100vh}
+
+    /* Navbar */
+    .navbar{background:var(--clr-white);padding:1rem 2rem;box-shadow:0 2px 10px rgba(0,0,0,.1);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+    .logo{font-family:'Montserrat',sans-serif;font-size:1.5rem;font-weight:700;color:var(--clr-pink-dark);text-decoration:none}
+    .nav-links{list-style:none;display:flex;gap:1.5rem}
+    .nav-links a{text-decoration:none;color:var(--clr-charcoal);font-weight:600}
+    .nav-links a:hover{color:var(--clr-pink-dark)}
+
+    /* Header */
+    .page-header{max-width:1000px;margin:3rem auto 2rem;background:linear-gradient(135deg,var(--clr-pink-soft) 0%,var(--clr-peach-light) 100%);
+    padding:2.5rem 1.5rem;border-radius:20px;box-shadow:0 4px 15px rgba(0,0,0,.08);text-align:center}
+    .page-header h1{font-family:'Montserrat',sans-serif;font-size:2.4rem;color:var(--clr-pink-dark);margin-bottom:.6rem}
+    .page-header p{font-size:1.1rem;opacity:.9}
+
+    /* Filters */
+    .filters{max-width:1000px;margin:0 auto 1rem;display:flex;gap:.75rem;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .filters form{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+    .input, .select{padding:.65rem .9rem;border-radius:10px;border:1px solid #e0e0e0;background:#fff;min-width:240px}
+    .btn{background:var(--clr-pink-dark);color:#fff;border:none;border-radius:999px;padding:.7rem 1.2rem;font-weight:700;cursor:pointer}
+    .btn:hover{background:#b72b51}
+
+    /* Table */
+    .table-wrap{max-width:1100px;margin:1.5rem auto 3rem;background:linear-gradient(135deg,var(--clr-peach-light) 0%,var(--clr-white) 100%);
+    border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.08);padding:2rem;overflow-x:auto}
+    table{width:100%;border-collapse:collapse}
+    thead{background:var(--clr-pink);color:var(--clr-charcoal)}
+    th,td{padding:1rem;text-align:left;border-bottom:1px solid rgba(0,0,0,.05)}
+    th{font-family:'Montserrat',sans-serif;font-weight:600}
+    tr:hover{background:var(--clr-pink-soft);transition:background .3s}
+
+    /* Badges */
+    .badge{display:inline-block;padding:.25rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700}
+    .badge.STEM{background:var(--clr-sage);color:#fff}
+    .badge.Arts{background:var(--clr-pink-dark);color:#fff}
+    .badge.Both{background:var(--clr-blue-muted);color:#fff}
+    .badge.Leadership{background:var(--clr-purple);color:#fff}
+
+    /* Back to Top Button */
+    #backToTop {
+        display: none; /* Hidden by default */
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 99;
+        /* FORCE CIRCLE SHAPE */
+        width: 50px;
+        height: 50px;
+        padding: 0; /* Remove padding to stop oval shape */
+        border-radius: 50%;
+        /* CENTER THE ICON */
+        line-height: 50px;
+        text-align: center;
+        font-size: 1.2rem;
+        /* COLORS & STYLE */
+        border: none;
+        outline: none;
+        background-color: var(--clr-charcoal);
+        color: white;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        transition: transform 0.3s, background-color 0.3s;
+    }
+
+    #backToTop:hover {
+        transform: translateY(-5px);
+        background-color: var(--clr-pink-dark);
+    }
+   
+    /* Loading Spinner */
+    .loader {
+        text-align: center;
+        padding: 20px; display: none; font-weight: bold; color: var(--clr-pink-dark);
+    }
+
+    @media (max-width:768px){
+      .page-header h1{font-size:1.9rem}
+      .table-wrap{padding:1rem}
+      th,td{padding:.8rem}
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="logo">Ella Rises</a>
+    <ul class="nav-links">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/participants">Participants</a></li>
+      <li><a href="/events" style="color: var(--clr-pink-dark);">Events</a></li>
+      <li><a href="/donation_list">Donations</a></li>
+      <li><a href="/logout">Logout</a></li>
+    </ul>
+  </nav>
+
+  <section class="page-header">
+    <h1>Events</h1>
+    <% if (user && user.role === 'admin') { %>
+      <p>Browse and manage all upcoming events.</p>
+    <% } else { %>
+      <p>Browse upcoming events in your area.</p>
+    <% } %>
+  </section>
+
+  <div class="filters">
+    <form method="get" action="/events">
+      <input class="input" type="text" name="search" placeholder="Search title, description, location..." value="<%= (filters && filters.search) || '' %>">
+      <select class="select" name="category">
+        <option value="All" <%= (filters && filters.category === 'All') ? 'selected' : '' %>>All categories</option>
+        <option value="STEM" <%= (filters && filters.category === 'STEM') ? 'selected' : '' %>>STEM</option>
+        <option value="Arts" <%= (filters && filters.category === 'Arts') ? 'selected' : '' %>>Arts</option>
+        <option value="Leadership" <%= (filters && filters.category === 'Leadership') ? 'selected' : '' %>>Leadership</option>
+        <option value="Both" <%= (filters && filters.category === 'Both') ? 'selected' : '' %>>Both</option>
+      </select>
+      <button class="btn" type="submit">Apply</button>
+    </form>
+   
+    <% if (user && user.role === 'admin') { %>
+        <a href="/events/add" class="btn" style="background-color: var(--clr-sage); margin-left: auto;">
+          <i class="fa-solid fa-plus"></i> Add Event
+        </a>
+      <% } %>
+  </div>
+
+  <div class="table-wrap">
+    <table id="eventsTable">
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Title</th>
+          <th>Category</th>
+          <th>Location</th>
+          <th>Description</th>
+          <% if (user && user.role === 'admin') { %>
+            <th style="text-align: right;">Actions</th>
+          <% } %>
+        </tr>
+      </thead>
+      <tbody id="eventsBody">
+        
+        <% if (events && events.length) { %>
+          <% events.forEach(e => { %>
+            <tr>
+              <td>
+                <strong><%= new Date(e.start_at).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %></strong>
+                <% if (e.end_at) { %>
+                   <div style="opacity:.8;font-size:.85rem; margin-top:4px;">
+                     To: <%= new Date(e.end_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
+                  </div>
+                <% } %>
+              </td>
+
+              <td><%= e.title %></td>
+      
+              <td><span class="badge <%= e.category || '' %>"><%= e.category || '—' %></span></td>
+             
+              <td>
+                <%= e.location_name || '' %>
+                <div style="opacity:.8;font-size:.9rem;">
+                  <%= [e.location_city, e.location_state].filter(Boolean).join(', ') %>
+                </div>
+              </td>
+              <td style="font-size: 0.9rem; color: #555;"><%= e.description || '' %></td>
+
+              <% if (user && user.role === 'admin') { %>
+                <td style="text-align: right; min-width: 140px;">
+                  <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                    <a href="/events/edit/<%= e.event_instance_id %>" class="btn" style="padding: .4rem .8rem; font-size: 0.8rem; background-color: var(--clr-blue-muted);">Edit</a>
+                    <form action="/events/delete/<%= e.event_instance_id %>" method="POST" onsubmit="return confirm('Are you sure? This will delete this specific event date.');">
+                      <button type="submit" class="btn" style="padding: .4rem .8rem; font-size: 0.8rem; background-color: var(--clr-charcoal);">Delete</button>
+                    </form>
+                    </div>
+                </td>
+              <% } %>
+
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="<%= (user && user.role === 'admin') ? 6 : 5 %>" style="text-align:center;">No events found.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+    <div class="loader" id="loader">Loading more events...</div>
+  </div>
+
+  <div style="text-align:center;margin-bottom:3rem;">
+    <a class="btn" href="/dashboard">← Back to Dashboard</a>
+  </div>
+
+  <button onclick="topFunction()" id="backToTop" title="Go to top">
+    <i class="fa-solid fa-arrow-up"></i>
+  </button>
+ 
+  <script>
+    // --- 1. BACK TO TOP LOGIC ---
+    const mybutton = document.getElementById("backToTop");
+
+    window.onscroll = function() { scrollFunction() };
+
+    function scrollFunction() {
+      // Show button after scrolling down 300px
+      if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+        mybutton.style.display = "block";
+      } else {
+        mybutton.style.display = "none";
+      }
+     
+      // Infinite Scroll Trigger
+      // If we are near bottom of page (200px buffer) and not currently loading
+      if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) {
+        loadMoreEvents();
+      }
+    }
+
+    function topFunction() {
+      document.body.scrollTop = 0; // For Safari
+      document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+    }
+
+
+    // --- 2. INFINITE SCROLL LOGIC ---
+    let page = 1;
+    let isLoading = false;
+    let hasMore = true; // Assume there is more data initially
+
+    // Capture search/category from URL to keep filters active while scrolling
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentSearch = urlParams.get('search') || '';
+    const currentCategory = urlParams.get('category') || 'All';
+
+    async function loadMoreEvents() {
+        if (isLoading || !hasMore) return;
+       
+        isLoading = true;
+        document.getElementById('loader').style.display = 'block';
+        page++; // Prepare to fetch next page
+
+        try {
+            // Fetch JSON data
+            const response = await fetch(`/events?page=${page}&search=${currentSearch}&category=${currentCategory}`, {
+                headers: { 'Accept': 'application/json' }
+            });
+            const data = await response.json();
+           
+            if (data.events && data.events.length > 0) {
+                appendRows(data.events, data.user);
+            } else {
+                hasMore = false; // No more data to load
+                document.getElementById('loader').innerHTML = "End of events list.";
+            }
+        } catch (error) {
+            console.error('Error loading events:', error);
+        } finally {
+            isLoading = false;
+            if(hasMore) document.getElementById('loader').style.display = 'none';
+        }
+    }
+
+    function appendRows(events, user) {
+        const tbody = document.getElementById('eventsBody');
+        events.forEach(e => {
+            // Format Date JS-side
+            const dateOpts = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+            const startStr = new Date(e.start_at).toLocaleString('en-US', dateOpts);
+           
+            let endStr = '';
+            if (e.end_at) {
+                 const t = new Date(e.end_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                 endStr = `<div style="opacity:.8;font-size:.85rem; margin-top:4px;">To: ${t}</div>`;
+            }
+
+            // Create Row HTML
+            const isAdmin = (user && user.role === 'admin');
+            
+            // Build Actions Column (Admin only)
+            let actionsHtml = '';
+            if (isAdmin) {
+                actionsHtml = `
+                    <td style="text-align: right; min-width: 140px;">
+                      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <a href="/events/edit/${e.event_instance_id}" class="btn" style="padding: .4rem .8rem; font-size: 0.8rem; background-color: var(--clr-blue-muted);">Edit</a>
+                        <form action="/events/delete/${e.event_instance_id}" method="POST" onsubmit="return confirm('Are you sure?');">
+                          <button type="submit" class="btn" style="padding: .4rem .8rem; font-size: 0.8rem; background-color: var(--clr-charcoal);">Delete</button>
+                        </form>
+                        </div>
+                    </td>
+                `;
+            }
+
+             const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${startStr}</strong>${endStr}</td>
+                <td>${e.title}</td>
+                <td><span class="badge ${e.category || ''}">${e.category || '—'}</span></td>
+                <td>
+                    ${e.location_name || ''}
+                </td>
+                <td style="font-size: 0.9rem; color: #555;">${e.description || ''}</td>
+                ${actionsHtml}
+            `;
+           
+            tbody.appendChild(tr);
+        });
+    }
+  </script>
+</body>
+</html>

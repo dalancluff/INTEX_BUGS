@@ -1,0 +1,473 @@
+<!-- views/dashboard.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | Ella Rises</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Nunito+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==================== BRAND COLORS ==================== */
+    :root {
+      --clr-peach-light: #F9F5EA;
+      --clr-pink-soft: #FFD8D1;
+      --clr-pink: #F9AFB1;
+      --clr-pink-dark: #CE325B;
+      --clr-sage: #9AB59D;
+      --clr-charcoal: #3A3F3B;
+      --clr-coral: #F4B092;
+      --clr-blue-muted: #99B7C6;
+      --clr-purple: #978EC4;
+      --clr-white: #ffffff;
+      --clr-gray-light: #f5f5f5;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Nunito Sans', sans-serif;
+      background: var(--clr-gray-light);
+      color: var(--clr-charcoal);
+      line-height: 1.6;
+    }
+
+    /* ==================== NAVBAR ==================== */
+    .navbar {
+      background: var(--clr-white);
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .logo {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--clr-pink-dark);
+      text-decoration: none;
+    }
+    .user-badge {
+      background: linear-gradient(135deg, var(--clr-coral), var(--clr-pink-dark));
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .btn-logout {
+      background: var(--clr-charcoal);
+      color: white;
+      padding: 0.6rem 1.5rem;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: transform 0.2s, background 0.3s;
+    }
+    .btn-logout:hover {
+      background: var(--clr-pink-dark);
+      transform: translateY(-2px);
+    }
+
+    /* ==================== CONTAINER ==================== */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* ==================== WELCOME SECTION ==================== */
+    .welcome-section {
+      background: linear-gradient(135deg, var(--clr-pink-soft) 0%, var(--clr-peach-light) 100%);
+      padding: 3rem;
+      border-radius: 20px;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .welcome-section h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 2.5rem;
+      color: var(--clr-pink-dark);
+      margin-bottom: 0.5rem;
+    }
+    .role-badge {
+      display: inline-block;
+      background: var(--clr-pink-dark);
+      color: white;
+      padding: 0.5rem 1.5rem;
+      border-radius: 999px;
+      margin-top: 1rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .btn-manage-users {
+      display: inline-block;
+      background: var(--clr-pink-dark);
+      color: white;
+      padding: 0.5rem 1.5rem;
+      border-radius: 999px;
+      margin-top: 1rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+    }
+    .btn-manage-users:hover {
+      background: linear-gradient(135deg, #CE325B, #F4B092);
+      transform: translateY(-2px);
+    }
+
+    /* ==================== STATS GRID ==================== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--clr-white);
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      border-left: 5px solid var(--clr-pink);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+    .stat-number {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+    .stat-label {
+      font-size: 1rem;
+      color: #666;
+      font-weight: 600;
+    }
+
+    /* ==================== ACTION CARDS ==================== */
+    .section-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.8rem;
+      color: var(--clr-pink-dark);
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+    }
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    .image-wrapper {
+      width: 100%;
+      height: 250px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #fff8f7;
+      opacity: 0.7;
+    }
+    .action-card {
+      display: block;
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      text-decoration: none;
+    }
+    .action-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+    }
+    .participants-image, .events-image, .donations-image, .survey-image, .milestone-image {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+      object-position: center;
+      border-radius: 12px;
+    }
+  /* Improved responsive sizing for Donations image */
+.donations-image {
+  width: 100%;
+  height: clamp(300px, 45vw, 500px); /* adjusts with screen width */
+  object-fit: cover; /* fills area without distortion */
+  object-position: center 30%;
+  border-radius: 12px;
+}
+
+    .action-overlay-light {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.2rem 1rem;
+      background: linear-gradient(to top, rgba(255,216,209,0.95), rgba(249,245,234,0.4));
+      color: #3A3F3B;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .action-overlay-light h3 {
+      margin: 0;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #CE325B;
+    }
+    .action-overlay-light p {
+      margin-top: 0.4rem;
+      font-size: 1rem;
+      color: #000;
+    }
+    .action-badge {
+      display: inline-block;
+      margin-top: 0.5rem;
+      padding: 0.3rem 1rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .action-badge.manager {
+      background: var(--clr-pink-dark);
+      color: white;
+    }
+    .action-badge.view {
+      background: var(--clr-sage);
+      color: white;
+    }
+
+    /* ==================== TABLEAU DASHBOARD ==================== */
+    .tableau-embed-section {
+      margin-top: 4rem;
+      text-align: center;
+    }
+    .tableau-description {
+      font-size: 1.05rem;
+      color: var(--clr-charcoal);
+      max-width: 800px;
+      margin: 0 auto 2rem auto;
+      line-height: 1.6;
+      opacity: 0.85;
+    }
+    .tableau-card {
+      background: var(--clr-white);
+      border-radius: 20px;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      padding: 1.5rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .tableau-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
+    }
+    .tableauPlaceholder {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--clr-pink-soft), var(--clr-peach-light));
+      padding: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="/" class="logo">Ella Rises</a>
+    <div class="nav-right">
+      <span class="user-badge"><%= user.first_name %> <%= user.last_name %></span>
+      <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="container">
+    <div class="welcome-section">
+      <h1>Welcome to the Dashboard!</h1>
+      <span class="role-badge">
+        <% if (user.role && user.role.toLowerCase().startsWith('a')) { %>
+          👑 Manager - Full Access
+        <% } else { %>
+          👤 User - View Only
+        <% } %>
+      </span>
+      <p style="margin-top: 1rem;">
+        <% if (user.role && user.role.toLowerCase().startsWith('a')) { %>
+          You have full permissions to add, edit, and manage all program data.
+        <% } else { %>
+          You can view your own information and progress within Ella Rises.
+        <% } %>
+      </p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-number"><%= stats.totalParticipants.toLocaleString() %></div><div class="stat-label">Total Participants</div></div>
+      <div class="stat-card"><div class="stat-number"><%= stats.regularUsers.toLocaleString() %></div><div class="stat-label">Regular Users</div></div>
+      <div class="stat-card"><div class="stat-number"><%= stats.admins.toLocaleString() %></div><div class="stat-label">Administrators</div></div>
+      <div class="stat-card"><div class="stat-number">$<%= stats.totalDonations.toLocaleString('en-US') %></div><div class="stat-label">Total Donations</div></div>
+    </div>
+
+  <!-- Quick Actions -->
+<h2 class="section-title">Quick Actions</h2>
+<div class="actions-grid">
+
+  <!-- Participants -->
+  <a href="/participants" class="action-card participants-card">
+    <div class="image-wrapper">
+      <img src="/images/Participantspicture.avif" alt="Participants" class="participants-image">
+    </div>
+    <div class="action-overlay-light">
+      <h3>Participants</h3>
+      <% if (user.role && user.role.toLowerCase().startsWith('a')) { %>
+        <p>Browse and manage all participants</p>
+        <span class="action-badge manager">Manage & View</span>
+      <% } else { %>
+        <p>View your participant information only</p>
+        <span class="action-badge view">View Only</span>
+      <% } %>
+    </div>
+  </a>
+
+  <!-- Events -->
+  <a href="/events" class="action-card events-card">
+    <div class="image-wrapper">
+      <img src="/images/eventspicture.avif" alt="Events" class="events-image">
+    </div>
+    <div class="action-overlay-light">
+      <h3>Events</h3>
+      <% if (user.role && user.role.toLowerCase().startsWith('a')) { %>
+        <p>Manage and view all upcoming and past events</p>
+        <span class="action-badge manager">Manage & View</span>
+      <% } else { %>
+        <p>View your registered or recommended events</p>
+        <span class="action-badge view">View Only</span>
+      <% } %>
+    </div>
+  </a>
+
+  <!-- Milestones (now small grid card) -->
+  <a href="/milestones" class="action-card milestones-card">
+    <div class="image-wrapper">
+      <img src="/images/milestonespicture.avif" alt="Milestones" class="milestone-image">
+    </div>
+    <div class="action-overlay-light">
+      <h3>Milestones</h3>
+      <% if (user.role && user.role.toLowerCase().startsWith('a')) { %>
+        <p>Manage and assign participant milestones</p>
+        <span class="action-badge manager">Manage & View</span>
+      <% } else { %>
+        <p>View your achieved milestones</p>
+        <span class="action-badge view">View Only</span>
+      <% } %>
+    </div>
+  </a>
+
+  <!-- Surveys -->
+  <a href="/surveys" class="action-card surveys-card">
+    <div class="image-wrapper">
+      <img src="/images/surveypicture.avif" alt="Surveys" class="survey-image">
+    </div>
+    <div class="action-overlay-light">
+      <h3>Surveys</h3>
+      <% if (user.role && user.role.toLowerCase().startsWith('a')) { %>
+        <p>Take a look at participant surveys</p>
+        <span class="action-badge manager">Manage & View</span>
+      <% } else { %>
+        <p>Take a look at participant surveys</p>
+        <span class="action-badge view">View Only</span>
+      <% } %>
+    </div>
+  </a>
+</div>
+
+<!-- Donations (now the large standalone card at the bottom) -->
+<a href="/donation_list" class="action-card donations-card">
+  <div class="image-wrapper">
+    <img src="/images/donationspicture.avif" alt="Donations" class="donations-image">
+  </div>
+  <div class="action-overlay-light">
+    <h3>Donations</h3>
+    <% if (user.role && user.role.toLowerCase().startsWith('a')) { %>
+      <p>Track and manage all donor contributions</p>
+      <span class="action-badge manager">Manage & View</span>
+    <% } else { %>
+      <p>View your donation history and totals</p>
+      <span class="action-badge view">View Only</span>
+    <% } %>
+  </div>
+</a>
+
+
+<% if (user.role && user.role.toLowerCase().startsWith('a')) { %>
+  <!-- Tableau Dashboard (Admins Only) -->
+  <div class="tableau-embed-section">
+    <h2 class="section-title">Participant Insights Dashboard</h2>
+    <p class="tableau-description">
+      Explore participant engagement, milestones, and growth across the Ella Rises program.  
+      This Tableau dashboard offers interactive insights into participation trends and progress.
+    </p>
+
+    <div class="tableau-card">
+      <div class="tableauPlaceholder" id="viz1764790617624" style="position: relative">
+        <noscript>
+          <a href="#">
+            <img alt="Participant Insights Dashboard"
+              src="https://public.tableau.com/static/images/IN/INTEXFALL2025/ParticipantInsightsDashboard/1_rss.png"
+              style="border:none;" />
+          </a>
+        </noscript>
+
+        <object class="tableauViz" style="display:none;">
+          <param name="host_url" value="https%3A%2F%2Fpublic.tableau.com%2F" />
+          <param name="embed_code_version" value="3" />
+          <param name="site_root" value="" />
+          <param name="name" value="INTEXFALL2025/ParticipantInsightsDashboard" />
+          <param name="tabs" value="no" />
+          <param name="toolbar" value="yes" />
+          <param name="static_image"
+            value="https://public.tableau.com/static/images/IN/INTEXFALL2025/ParticipantInsightsDashboard/1.png" />
+          <param name="animate_transition" value="yes" />
+          <param name="display_static_image" value="yes" />
+          <param name="display_spinner" value="yes" />
+          <param name="display_overlay" value="yes" />
+          <param name="display_count" value="yes" />
+          <param name="language" value="en-US" />
+          <param name="filter" value="publish=yes" />
+        </object>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      var divElement = document.getElementById('viz1764790617624');
+      var vizElement = divElement.getElementsByTagName('object')[0];
+      if (divElement.offsetWidth > 800) {
+        vizElement.style.width = '100%';
+        vizElement.style.height = (divElement.offsetWidth * 0.75) + 'px';
+      } else if (divElement.offsetWidth > 500) {
+        vizElement.style.width = '100%';
+        vizElement.style.height = (divElement.offsetWidth * 0.75) + 'px';
+      } else {
+        vizElement.style.width = '100%';
+        vizElement.style.height = '1727px';
+      }
+      var scriptElement = document.createElement('script');
+      scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+      vizElement.parentNode.insertBefore(scriptElement, vizElement);
+    </script>
+  </div>
+<% } %>
+
+</body>
+</html>
