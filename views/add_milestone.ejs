@@ -6,25 +6,27 @@
   <title>Add Milestone | Ella Rises</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Nunito+Sans:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
-    /* ==================== BRAND COLORS (Matches Global) ==================== */
+    /* ==================== BRAND COLORS ==================== */
     :root {
       --clr-peach-light: #F9F5EA;
       --clr-pink-soft: #FFD8D1; --clr-pink: #F9AFB1; --clr-pink-dark: #CE325B;
-      --clr-sage: #9AB59D; --clr-charcoal: #3A3F3B; --clr-gray-light: #f5f5f5;
-      --clr-border: #e0e0e0; --clr-white: #ffffff;
+      --clr-sage: #9AB59D; --clr-charcoal: #3A3F3B; --clr-coral: #F4B092; --clr-blue-muted: #99B7C6;
+      --clr-purple: #978EC4; --clr-white: #ffffff; --clr-gray-light: #f5f5f5;
+      --clr-border: #e0e0e0;
     }
 
+    /* ==================== GLOBAL STYLES ==================== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Nunito Sans', sans-serif; background: var(--clr-gray-light); color: var(--clr-charcoal); min-height: 100vh; }
     
-    /* Navbar */
+    /* ==================== NAVBAR ==================== */
     .navbar { background: var(--clr-white); padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
     .logo { font-family: 'Montserrat', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--clr-pink-dark); text-decoration: none; }
     .nav-links { list-style: none; display: flex; gap: 1.5rem; }
     .nav-links a { text-decoration: none; color: var(--clr-charcoal); font-weight: 600; transition: color 0.3s; }
     .nav-links a:hover { color: var(--clr-pink-dark); }
 
-    /* Form Styles */
+    /* ==================== FORM STYLES ==================== */
     .container { max-width: 800px; margin: 2rem auto; padding: 2rem; background: white; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     h1 { font-family: 'Montserrat', sans-serif; color: var(--clr-pink-dark); margin-bottom: 0.5rem; }
     .subtitle { color: #666; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--clr-border); }
@@ -66,10 +68,12 @@
             <label for="user_id">Participant</label>
             <select id="user_id" name="user_id" required>
                 <option value="" disabled selected>Select a participant...</option>
-                <% if(users && users.length) { %>
+                <% if(typeof users !== 'undefined' && users.length) { %>
                     <% users.forEach(u => { %>
-                        <option value="<%= u.user_id %>"><%= u.last_name %>, <%= u.first_name %></option>
+                     <option value="<%= u.user_id %>"><%= u.last_name %>, <%= u.first_name %></option>
                     <% }) %>
+                <% } else { %>
+                    <option disabled>No participants found</option>
                 <% } %>
             </select>
         </div>
