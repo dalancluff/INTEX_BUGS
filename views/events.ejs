@@ -35,7 +35,7 @@
     .filters{max-width:1000px;margin:0 auto 1rem;display:flex;gap:.75rem;align-items:center;justify-content:space-between;flex-wrap:wrap}
     .filters form{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
     .input, .select{padding:.65rem .9rem;border-radius:10px;border:1px solid #e0e0e0;background:#fff;min-width:240px}
-    .btn{background:var(--clr-pink-dark);color:#fff;border:none;border-radius:999px;padding:.7rem 1.2rem;font-weight:700;cursor:pointer}
+    .btn{background:var(--clr-pink-dark);color:#fff;border:none;border-radius:999px;padding:.7rem 1.2rem;font-weight:700;cursor:pointer;text-decoration: none;}
     .btn:hover{background:#b72b51}
 
     /* Table */
@@ -127,8 +127,9 @@
         <option value="STEM" <%= (filters && filters.category === 'STEM') ? 'selected' : '' %>>STEM</option>
         <option value="Arts" <%= (filters && filters.category === 'Arts') ? 'selected' : '' %>>Arts</option>
         <option value="Leadership" <%= (filters && filters.category === 'Leadership') ? 'selected' : '' %>>Leadership</option>
+        <option value="Both" <%= (filters && filters.category === 'Both') ? 'selected' : '' %>>Both</option>
       </select>
-      <button class="btn" type="submit">Search</button>
+      <button class="btn" type="submit">Apply</button>
     </form>
    
     <% if (user && user.role === 'admin') { %>

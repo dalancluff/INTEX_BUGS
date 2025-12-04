@@ -1,4 +1,3 @@
-<!-- views/dashboard.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard | Ella Rises</title>
 
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Nunito+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 
   <style>
@@ -199,14 +197,14 @@
       object-position: center;
       border-radius: 12px;
     }
-  /* Improved responsive sizing for Donations image */
-.donations-image {
-  width: 100%;
-  height: clamp(300px, 45vw, 500px); /* adjusts with screen width */
-  object-fit: cover; /* fills area without distortion */
-  object-position: center 30%;
-  border-radius: 12px;
-}
+    /* Improved responsive sizing for Donations image */
+    .donations-image {
+      width: 100%;
+      height: clamp(300px, 45vw, 500px); /* adjusts with screen width */
+      object-fit: cover; /* fills area without distortion */
+      object-position: center 30%;
+      border-radius: 12px;
+    }
 
     .action-overlay-light {
       position: absolute;
@@ -264,8 +262,12 @@
       border-radius: 20px;
       box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
       overflow: hidden;
-      padding: 1.5rem;
+      /* CHANGE 1: Removed padding to let dashboard fill the card */
+      padding: 0;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
+      /* Ensure nothing spills out */
+      width: 100%;
+      position: relative;
     }
     .tableau-card:hover {
       transform: translateY(-4px);
@@ -273,16 +275,14 @@
     }
     .tableauPlaceholder {
       width: 100%;
-      border-radius: 12px;
+      /* CHANGE 2: Removed internal padding and border-radius to prevent double-borders */
+      padding: 0;
       overflow: hidden;
-      background: linear-gradient(135deg, var(--clr-pink-soft), var(--clr-peach-light));
-      padding: 1rem;
     }
   </style>
 </head>
 
 <body>
-  <!-- NAVBAR -->
   <nav class="navbar">
     <a href="/" class="logo">Ella Rises</a>
     <div class="nav-right">
@@ -291,7 +291,6 @@
     </div>
   </nav>
 
-  <!-- MAIN CONTENT -->
   <div class="container">
     <div class="welcome-section">
       <h1>Welcome to the Dashboard!</h1>
@@ -311,7 +310,6 @@
       </p>
     </div>
 
-    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-number"><%= stats.totalParticipants.toLocaleString() %></div><div class="stat-label">Total Participants</div></div>
       <div class="stat-card"><div class="stat-number"><%= stats.regularUsers.toLocaleString() %></div><div class="stat-label">Regular Users</div></div>
@@ -319,11 +317,9 @@
       <div class="stat-card"><div class="stat-number">$<%= stats.totalDonations.toLocaleString('en-US') %></div><div class="stat-label">Total Donations</div></div>
     </div>
 
-  <!-- Quick Actions -->
-<h2 class="section-title">Quick Actions</h2>
+  <h2 class="section-title">Quick Actions</h2>
 <div class="actions-grid">
 
-  <!-- Participants -->
   <a href="/participants" class="action-card participants-card">
     <div class="image-wrapper">
       <img src="/images/Participantspicture.avif" alt="Participants" class="participants-image">
@@ -340,7 +336,6 @@
     </div>
   </a>
 
-  <!-- Events -->
   <a href="/events" class="action-card events-card">
     <div class="image-wrapper">
       <img src="/images/eventspicture.avif" alt="Events" class="events-image">
@@ -357,7 +352,6 @@
     </div>
   </a>
 
-  <!-- Milestones (now small grid card) -->
   <a href="/milestones" class="action-card milestones-card">
     <div class="image-wrapper">
       <img src="/images/milestonespicture.avif" alt="Milestones" class="milestone-image">
@@ -374,7 +368,6 @@
     </div>
   </a>
 
-  <!-- Surveys -->
   <a href="/surveys" class="action-card surveys-card">
     <div class="image-wrapper">
       <img src="/images/surveypicture.avif" alt="Surveys" class="survey-image">
@@ -392,7 +385,6 @@
   </a>
 </div>
 
-<!-- Donations (now the large standalone card at the bottom) -->
 <a href="/donation_list" class="action-card donations-card">
   <div class="image-wrapper">
     <img src="/images/donationspicture.avif" alt="Donations" class="donations-image">
@@ -411,7 +403,6 @@
 
 
 <% if (user.role && user.role.toLowerCase().startsWith('a')) { %>
-  <!-- Tableau Dashboard (Admins Only) -->
   <div class="tableau-embed-section">
     <h2 class="section-title">Participant Insights Dashboard</h2>
     <p class="tableau-description">
@@ -450,20 +441,34 @@
     </div>
 
     <script type="text/javascript">
-      var divElement = document.getElementById('viz1764790617624');
-      var vizElement = divElement.getElementsByTagName('object')[0];
-      if (divElement.offsetWidth > 800) {
+      function resizeTableau() {
+        var divElement = document.getElementById('viz1764790617624');
+        var vizElement = divElement.getElementsByTagName('object')[0];
+        
+        // Force width to be 100% of the container (which now has no padding)
         vizElement.style.width = '100%';
-        vizElement.style.height = (divElement.offsetWidth * 0.75) + 'px';
-      } else if (divElement.offsetWidth > 500) {
-        vizElement.style.width = '100%';
-        vizElement.style.height = (divElement.offsetWidth * 0.75) + 'px';
-      } else {
-        vizElement.style.width = '100%';
-        vizElement.style.height = '1727px';
+
+        if (divElement.offsetWidth > 800) {
+          // Desktop: Use a fixed height common for dashboards to prevent cutting off
+          vizElement.style.height = '850px'; 
+        } else if (divElement.offsetWidth > 500) {
+          // Tablet: Slightly smaller fixed height
+          vizElement.style.height = '850px';
+        } else {
+          // Mobile: Keep the long vertical layout
+          vizElement.style.height = '1727px';
+        }
       }
+
+      // Initialize
+      resizeTableau();
+
+      // Recalculate on window resize
+      window.addEventListener('resize', resizeTableau);
+
       var scriptElement = document.createElement('script');
       scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+      var vizElement = document.getElementById('viz1764790617624').getElementsByTagName('object')[0];
       vizElement.parentNode.insertBefore(scriptElement, vizElement);
     </script>
   </div>

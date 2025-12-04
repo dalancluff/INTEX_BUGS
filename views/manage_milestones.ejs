@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Milestones | Ella Rises</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Nunito+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root { --clr-pink-dark: #CE325B; --clr-charcoal: #3A3F3B; --clr-gray-light: #f5f5f5; --clr-border: #e0e0e0; --clr-white: #ffffff; }
+    body { font-family: 'Nunito Sans', sans-serif; background: var(--clr-gray-light); color: var(--clr-charcoal); margin: 0; }
+    
+    .navbar { background: var(--clr-white); padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-family: 'Montserrat', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--clr-pink-dark); text-decoration: none; }
+    .nav-links { list-style: none; display: flex; gap: 1.5rem; }
+    .nav-links a { text-decoration: none; color: var(--clr-charcoal); font-weight: 600; }
+
+    .container { max-width: 800px; margin: 3rem auto; background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    h1 { font-family: 'Montserrat', sans-serif; color: var(--clr-pink-dark); margin-bottom: 0.5rem; }
+    
+    .milestone-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--clr-border); }
+    .milestone-item:last-child { border-bottom: none; }
+    
+    .add-form { background: #f9f9f9; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid #eee; }
+    .form-row { display: flex; gap: 10px; align-items: flex-end; }
+    .input-group { flex-grow: 1; }
+    .input-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
+    input { width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; }
+    
+    .btn { padding: 0.6rem 1.2rem; border-radius: 4px; border: none; cursor: pointer; font-weight: 600; text-decoration: none; font-size: 0.9rem; }
+    .btn-primary { background: var(--clr-pink-dark); color: white; }
+    .btn-danger { background: #333; color: white; }
+    .btn-edit { background: #99B7C6; color: white; margin-right: 5px; }
+  </style>
+</head>
+<body>
+  
+  <nav class="navbar">
+    <a href="/" class="logo">Ella Rises</a>
+    <ul class="nav-links">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/participants">Participants</a></li>
+      <li><a href="/events">Events</a></li>
+      <li><a href="/milestones">Milestones</a></li>
+      <li><a href="/logout">Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+        <div>
+            <h1>Manage Milestones</h1>
+            <p>Student: <strong><%= student.first_name %> <%= student.last_name %></strong></p>
+        </div>
+        <a href="/milestones" class="btn" style="background: #ccc; color: #333;">&larr; Back to List</a>
+    </div>
+
+    <div class="add-form">
+        <h3 style="margin-bottom: 1rem;">Add New Milestone</h3>
+        <form action="/milestones/add" method="POST">
+            <input type="hidden" name="user_id" value="<%= student.user_id %>">
+            <div class="form-row">
+                <div class="input-group" style="flex: 2;">
+                    <label>Milestone Title</label>
+                    <input type="text" name="title" required placeholder="e.g. Completed Fall Workshop">
+                </div>
+                <div class="input-group" style="flex: 1;">
+                    <label>Date Achieved</label>
+                    <input type="date" name="milestone_date">
+                </div>
+                <button type="submit" class="btn btn-primary">Add</button>
+            </div>
+        </form>
+    </div>
+
+    <h3 style="border-bottom: 2px solid var(--clr-pink-dark); padding-bottom: 0.5rem; margin-bottom: 0;">Existing Milestones</h3>
+    <div>
+        <% if (milestones.length > 0) { %>
+            <% milestones.forEach(m => { %>
+                <div class="milestone-item">
+                    <div>
+                        <div style="font-weight: bold; font-size: 1.1rem;"><%= m.title %></div>
+                        <% if (m.milestone_date) { %>
+                            <div style="color: #666; font-size: 0.9rem;">
+                                <%= new Date(m.milestone_date).toLocaleDateString() %>
+                            </div>
+                        <% } %>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <a href="/milestones/edit/<%= m.milestone_id %>" class="btn btn-edit">
+                            <i class="fa-solid fa-pen"></i> Edit
+                        </a>
+
+                        <form action="/milestones/delete/<%= m.milestone_id %>" method="POST" onsubmit="return confirm('Delete this milestone?');" style="display:inline;">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <p style="padding: 2rem; text-align: center; color: #666;">No milestones recorded for this student.</p>
+        <% } %>
+    </div>
+  </div>
+
+</body>
+</html>

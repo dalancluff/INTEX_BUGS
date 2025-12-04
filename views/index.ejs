@@ -512,26 +512,71 @@
       <p class="section-subtitle">
         Making a real difference in the lives of young women and their communities
       </p>
-      
-      <div class="impact-stats">
-        <div class="stat">
-          <div class="stat-number">500+</div>
-          <div class="stat-label">Participants Served</div>
-        </div>
-        <div class="stat">
-          <div class="stat-number">95%</div>
-          <div class="stat-label">College Enrollment Rate</div>
-        </div>
-        <div class="stat">
-          <div class="stat-number">50+</div>
-          <div class="stat-label">Community Events</div>
-        </div>
-        <div class="stat">
-          <div class="stat-number">100+</div>
-          <div class="stat-label">Scholarships Awarded</div>
+
+
+
+    <!-- Tableau KPI Section -->
+  <div class="impact-dashboard">
+    <div class="impact-grid" style="
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      flex-wrap: nowrap;
+      gap: 1.5rem;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      padding-bottom: 1rem;
+    ">
+      <!-- KPI 1 -->
+          <div class="impact-card" style="flex: 0 0 25%; min-width: 260px;">
+            <h3>Total University Attendees</h3>
+            <iframe
+              src="https://public.tableau.com/views/INTEXFALL2025/TotalUniAttendees?:showVizHome=no&:embed=true&:toolbar=no&:showAppBanner=false"
+              width="100%" height="300" style="border:none;border-radius:12px;"
+              title="Total University Attendees"
+              loading="lazy">
+            </iframe>
+          </div>
+
+          <!-- KPI 2 -->
+          <div class="impact-card" style="flex: 0 0 25%; min-width: 260px;">
+            <h3>Total Graduates</h3>
+            <iframe
+              src="https://public.tableau.com/views/INTEXFALL2025/TotalUniGrads?:showVizHome=no&:embed=true&:toolbar=no&:showAppBanner=false"
+              width="100%" height="300" style="border:none;border-radius:12px;"
+              title="Total Graduates"
+              loading="lazy">
+            </iframe>
+          </div>
+
+          <!-- KPI 3 -->
+          <div class="impact-card" style="flex: 0 0 25%; min-width: 260px;">
+            <h3>Total Donations</h3>
+            <iframe
+              src="https://public.tableau.com/views/INTEXFALL2025/TotalDonations?:showVizHome=no&:embed=true&:toolbar=no&:showAppBanner=false"
+              width="100%" height="300" style="border:none;border-radius:12px;"
+              title="Total Donations"
+              loading="lazy">
+            </iframe>
+          </div>
+
+          <!-- KPI 4 -->
+          <div class="impact-card" style="flex: 0 0 25%; min-width: 260px;">
+            <h3>Reach Across Communities</h3>
+            <iframe
+              src="https://public.tableau.com/views/INTEXFALL2025/Totaldistinctcities?:showVizHome=no&:embed=true&:toolbar=no&:showAppBanner=false"
+              width="100%" height="300" style="border:none;border-radius:12px;"
+              title="Reach Across Communities"
+              loading="lazy">
+            </iframe>
+          </div>
         </div>
       </div>
     </section>
+
+
+
+    
 
     <!-- Call to Action Section -->
     <section id="donate" class="cta">
@@ -557,7 +602,7 @@
         <a href="#mission">Mission</a>
         <a href="#programs">Programs</a>
         <a href="#impact">Impact</a>
-        <a href="/login">Staff Login</a>
+        <a href="/login">Login</a>
       </div>
       
       <div class="footer-section">
@@ -579,5 +624,20 @@
       <p>&copy; 2024 Ella Rises. All rights reserved. | Empowering futures, one student at a time.</p>
     </div>
   </footer>
+
+    <!-- Tableau Initialization Script -->
+  <script type="text/javascript">
+    const vizIds = ['vizUniAttendees', 'vizUniGrads', 'vizDonations', 'vizCities'];
+    vizIds.forEach(id => {
+      const divElement = document.getElementById(id);
+      if (!divElement) return;
+      const vizElement = divElement.getElementsByTagName('object')[0];
+      vizElement.style.width = '100%';
+      vizElement.style.height = (divElement.offsetWidth * 0.5) + 'px';
+      const scriptElement = document.createElement('script');
+      scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+      vizElement.parentNode.insertBefore(scriptElement, vizElement);
+    });
+  </script>
 </body>
 </html>

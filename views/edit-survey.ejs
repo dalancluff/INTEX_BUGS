@@ -6,143 +6,46 @@
   <title>Edit Survey | Ella Rises</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Nunito+Sans:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
+    /* ==================== BRAND COLORS ==================== */
     :root {
       --clr-peach-light: #F9F5EA;
-      --clr-pink-soft: #FFD8D1;
-      --clr-pink: #F9AFB1;
-      --clr-pink-dark: #CE325B;
-      --clr-sage: #9AB59D;
-      --clr-charcoal: #3A3F3B;
-      --clr-white: #ffffff;
-      --clr-gray-light: #f5f5f5;
+      --clr-pink-soft: #FFD8D1; --clr-pink: #F9AFB1; --clr-pink-dark: #CE325B;
+      --clr-sage: #9AB59D; --clr-charcoal: #3A3F3B; --clr-coral: #F4B092; --clr-blue-muted: #99B7C6;
+      --clr-purple: #978EC4; --clr-white: #ffffff; --clr-gray-light: #f5f5f5;
+      --clr-border: #e0e0e0;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Nunito Sans', sans-serif;
-      background: var(--clr-gray-light);
-      color: var(--clr-charcoal);
-      min-height: 100vh;
-    }
-
-    .navbar {
-      background: var(--clr-white);
-      padding: 1rem 2rem;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
+    /* ==================== GLOBAL STYLES ==================== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Nunito Sans', sans-serif; background: var(--clr-gray-light); color: var(--clr-charcoal); min-height: 100vh; }
     
-    .logo {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--clr-pink-dark);
-      text-decoration: none;
-    }
+    /* ==================== NAVBAR ==================== */
+    .navbar { background: var(--clr-white); padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+    .logo { font-family: 'Montserrat', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--clr-pink-dark); text-decoration: none; }
+    .nav-links { list-style: none; display: flex; gap: 1.5rem; }
+    .nav-links a { text-decoration: none; color: var(--clr-charcoal); font-weight: 600; transition: color 0.3s; }
+    .nav-links a:hover { color: var(--clr-pink-dark); }
+
+    /* ==================== FORM STYLES ==================== */
+    .container { max-width: 800px; margin: 2rem auto; padding: 2rem; background: white; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    h1 { font-family: 'Montserrat', sans-serif; color: var(--clr-pink-dark); margin-bottom: 0.5rem; }
     
-    .nav-links {
-      list-style: none;
-      display: flex;
-      gap: 1.5rem;
-    }
+    .form-group { margin-bottom: 1.5rem; }
+    label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--clr-charcoal); }
     
-    .nav-links a {
-      text-decoration: none;
-      color: var(--clr-charcoal);
-      font-weight: 600;
-      transition: color 0.3s;
+    input[type="number"], select, textarea {
+      width: 100%; padding: 0.8rem; border: 1px solid var(--clr-border); border-radius: 5px; font-family: inherit; font-size: 1rem;
     }
+    textarea { resize: vertical; min-height: 100px; }
+
+    .info-box { background: var(--clr-peach-light); padding: 1.2rem; border-radius: 8px; margin-bottom: 2rem; border-left: 5px solid var(--clr-pink-dark); }
+    .info-box p { margin: 0.4rem 0; font-size: 0.95rem; }
+
+    .btn { display: inline-block; background: var(--clr-pink-dark); color: white; padding: 0.8rem 2rem; border-radius: 999px; text-decoration: none; font-weight: 600; border: none; cursor: pointer; font-size: 1rem; transition: opacity 0.2s; width: 100%; margin-top: 1rem; }
+    .btn:hover { opacity: 0.9; }
     
-    .nav-links a:hover {
-      color: var(--clr-pink-dark);
-    }
-
-    .container {
-      max-width: 700px;
-      margin: 2rem auto;
-      padding: 2rem;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-
-    h1 {
-      font-family: 'Montserrat', sans-serif;
-      color: var(--clr-pink-dark);
-      margin-bottom: 1.5rem;
-    }
-
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
-
-    label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      color: var(--clr-charcoal);
-    }
-
-    input[type="text"],
-    input[type="number"],
-    select,
-    textarea {
-      width: 100%;
-      padding: 0.8rem;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-family: 'Nunito Sans', sans-serif;
-      font-size: 1rem;
-    }
-
-    textarea {
-      min-height: 120px;
-      resize: vertical;
-    }
-
-    .btn {
-      display: inline-block;
-      background: var(--clr-pink-dark);
-      color: white;
-      padding: 0.8rem 2rem;
-      border-radius: 999px;
-      text-decoration: none;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: transform 0.2s, background 0.3s;
-    }
-
-    .btn:hover {
-      transform: translateY(-2px);
-      background: #b82850;
-    }
-
-    .btn-secondary {
-      background: var(--clr-sage);
-      margin-left: 1rem;
-    }
-
-    .btn-secondary:hover {
-      background: #87a289;
-    }
-
-    .info-text {
-      color: #666;
-      font-size: 0.9rem;
-      margin-bottom: 1rem;
-    }
+    .link-back { display: block; text-align: center; margin-top: 1.5rem; color: var(--clr-pink-dark); text-decoration: none; font-weight: 600; }
+    .link-back:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -158,76 +61,66 @@
   </nav>
 
   <div class="container">
-    <h1>Edit Survey/Registration</h1>
-    
-    <p class="info-text">
-      Editing registration for: <strong><%= survey.first_name %> <%= survey.last_name %></strong><br>
-      Event: <strong><%= survey.event_title %></strong>
-    </p>
+    <h1>Edit Survey</h1>
 
-    <form method="POST" action="/edit-survey/<%= survey.registration_id %>">
+    <div class="info-box">
+      <p><strong>Participant:</strong> <%= survey.first_name %> <%= survey.last_name %> (ID: <%= survey.user_id %>)</p>
+      <p><strong>Current Event:</strong> <%= survey.event_name %></p>
+      <p><strong>Registration ID:</strong> <%= survey.registration_id %></p>
+    </div>
+
+    <form action="/edit-survey/<%= survey.registration_id %>" method="POST">
       
       <div class="form-group">
-        <label for="status">Registration Status</label>
-        <select name="status" id="status" required>
-          <option value="registered" <%= survey.status === 'registered' ? 'selected' : '' %>>Registered</option>
-          <option value="attended" <%= survey.status === 'attended' ? 'selected' : '' %>>Attended</option>
-          <option value="cancelled" <%= survey.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
-          <option value="no-show" <%= survey.status === 'no-show' ? 'selected' : '' %>>No-Show</option>
+        <label for="user_id">User ID (Edit if necessary)</label>
+        <input type="number" name="user_id" id="user_id" value="<%= survey.user_id %>" required>
+      </div>
+
+      <div class="form-group">
+        <label for="event_id">Event</label>
+        <select name="event_id" id="event_id" required>
+          <% events.forEach(e => { %>
+            <option value="<%= e.event_id %>" <%= e.event_id === survey.event_instance_id ? 'selected' : '' %>>
+              <%= e.title %> - <%= e.event_date ? new Date(e.event_date).toLocaleDateString() : 'Date TBD' %>
+            </option>
+          <% }) %>
         </select>
       </div>
 
       <div class="form-group">
-        <label for="satisfaction">Satisfaction (1-5)</label>
-        <input 
-          type="number" 
-          name="satisfaction" 
-          id="satisfaction" 
-          min="1" 
-          max="5" 
-          value="<%= survey.survey_satisfaction || '' %>"
-          placeholder="Leave blank if not provided"
-        >
+        <label for="satisfaction">Satisfaction (0-5)</label>
+        <input type="number" name="satisfaction" id="satisfaction" min="0" max="5" step="1" value="<%= survey.survey_satisfaction || 0 %>" required>
       </div>
 
       <div class="form-group">
-        <label for="usefulness">Usefulness (1-5)</label>
-        <input 
-          type="number" 
-          name="usefulness" 
-          id="usefulness" 
-          min="1" 
-          max="5" 
-          value="<%= survey.survey_usefulness || '' %>"
-          placeholder="Leave blank if not provided"
-        >
+        <label for="usefulness">Usefulness (0-5)</label>
+        <input type="number" name="usefulness" id="usefulness" min="0" max="5" step="1" value="<%= survey.survey_usefulness || 0 %>" required>
       </div>
 
       <div class="form-group">
-        <label for="recommendation">Recommendation (1-5)</label>
-        <input 
-          type="number" 
-          name="recommendation" 
-          id="recommendation" 
-          min="1" 
-          max="5" 
-          value="<%= survey.survey_recommendation || '' %>"
-          placeholder="Leave blank if not provided"
-        >
+        <label for="instructor">Instructor Rating (0-5)</label>
+        <input type="number" name="instructor" id="instructor" min="0" max="5" step="1" value="<%= survey.survey_instructor || 0 %>" required>
+      </div>
+
+      <div class="form-group">
+        <label for="recommendation">Recommendation (0-5)</label>
+        <input type="number" name="recommendation" id="recommendation" min="0" max="5" step="1" value="<%= survey.survey_recommendation || 0 %>" required>
+      </div>
+
+      <div class="form-group">
+        <label for="overall">Overall Experience (0-5)</label>
+        <input type="number" name="overall" id="overall" min="0" max="5" step="1" value="<%= survey.survey_overall || 0 %>" required>
       </div>
 
       <div class="form-group">
         <label for="comments">Comments</label>
-        <textarea 
-          name="comments" 
-          id="comments" 
-          placeholder="Optional feedback comments"
-        ><%= survey.survey_comments || '' %></textarea>
+        <textarea name="comments" id="comments" rows="4"><%= survey.survey_comments || '' %></textarea>
       </div>
 
       <button type="submit" class="btn">Update Survey</button>
-      <a href="/surveys" class="btn btn-secondary">Cancel</a>
     </form>
+
+    <a href="/surveys" class="link-back">← Back to Surveys</a>
   </div>
 </body>
 </html>
