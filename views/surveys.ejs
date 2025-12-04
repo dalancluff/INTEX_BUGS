@@ -81,6 +81,34 @@
 
   <section class="page-header">
     <h1>Post-Event Surveys</h1>
+    
+    <form method="GET" action="/surveys" class="filter-container">
+      <input 
+        type="text" 
+        name="search" 
+        placeholder="Search by name, event, status, comments…" 
+        value="<%= typeof search !== 'undefined' ? search : '' %>"
+      >
+      
+      <input 
+        type="date" 
+        name="date" 
+        value="<%= typeof date !== 'undefined' ? date : '' %>"
+      >
+      
+      <select name="satisfaction">
+        <option value="">All Satisfaction</option>
+        <option value="1" <%= typeof satisfaction !== 'undefined' && satisfaction === '1' ? 'selected' : '' %>>1/5</option>
+        <option value="2" <%= typeof satisfaction !== 'undefined' && satisfaction === '2' ? 'selected' : '' %>>2/5</option>
+        <option value="3" <%= typeof satisfaction !== 'undefined' && satisfaction === '3' ? 'selected' : '' %>>3/5</option>
+        <option value="4" <%= typeof satisfaction !== 'undefined' && satisfaction === '4' ? 'selected' : '' %>>4/5</option>
+        <option value="5" <%= typeof satisfaction !== 'undefined' && satisfaction === '5' ? 'selected' : '' %>>5/5</option>
+        <option value="N/A" <%= typeof satisfaction !== 'undefined' && satisfaction === 'N/A' ? 'selected' : '' %>>N/A</option>
+      </select>
+      
+      <button type="submit" class="btn">Search</button>
+    </form>
+
     <% 
         const isAdmin = (user && user.role === 'admin') || (typeof currentUser !== 'undefined' && currentUser.role === 'admin'); 
     %>
