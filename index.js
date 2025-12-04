@@ -597,17 +597,17 @@ app.post('/events/delete/:id', requireLogin, requireManager, async (req, res) =>
 app.get('/donations', async (req, res) => { // You might want to add 'requireLogin' here
   try {
     const result = await pool.query(`
-        SELECT 
-            d.donation_id,
-            u.first_name || ' ' || u.last_name AS donor_name,
-            d.amount,
-            d.donation_date AS date
-        FROM donations d
-        JOIN users u ON d.user_id = u.user_id
-        ORDER BY d.donation_date DESC
-        LIMIT 50
-    `);
-
+    SELECT 
+    d.donation_id,
+    d.user_id,
+    u.first_name,
+    u.last_name,
+    d.amount,
+    d.donation_date AS date
+  FROM donations d
+  JOIN users u ON d.user_id = u.user_id
+  ORDER BY d.donation_date DESC;
+`);
     const donations = result.rows.length > 0 ? result.rows : [];
 
     // UPDATED LINE BELOW:
@@ -634,12 +634,13 @@ app.get('/donation_list', requireLogin, async (req, res) => {
 
     // Base Query
     let queryText = `
-      SELECT
+      SELECT 
         d.donation_id,
-        d.amount,
-        d.donation_date AS date,
         d.user_id,
-        u.first_name || ' ' || u.last_name AS donor_name
+        u.first_name,
+        u.last_name,
+        d.amount,
+        d.donation_date AS date
       FROM donations d
       JOIN users u ON d.user_id = u.user_id
     `;
@@ -658,15 +659,17 @@ app.get('/donation_list', requireLogin, async (req, res) => {
 
     // SEARCH FILTER (Applies to everyone)
     if (search) {
-      whereClauses.push(`(
-        u.first_name ILIKE $${paramCounter}
-        OR u.last_name ILIKE $${paramCounter}
-        OR CAST(d.amount AS TEXT) ILIKE $${paramCounter}
-        OR CAST(d.donation_date AS TEXT) ILIKE $${paramCounter}
-      )`);
-      queryParams.push(`%${search}%`);
-      paramCounter++;
-    }
+  whereClauses.push(`(
+    u.first_name ILIKE $${paramCounter}
+    OR u.last_name ILIKE $${paramCounter}
+    OR (u.first_name || ' ' || u.last_name) ILIKE $${paramCounter}
+    OR CAST(d.amount AS TEXT) ILIKE $${paramCounter}
+    OR CAST(d.donation_date AS TEXT) ILIKE $${paramCounter}
+  )`);
+  queryParams.push(`%${search}%`);
+  paramCounter++;
+}
+
 
     // Combine clauses if they exist
     if (whereClauses.length > 0) {
