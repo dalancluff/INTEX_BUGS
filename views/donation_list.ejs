@@ -109,10 +109,15 @@
       <% } %>
     </form>
 
-    <a href="/donations/add" class="btn" style="background-color: var(--clr-sage);">
-      <i class="fa-solid fa-plus"></i> Add Donation
-    </a>
-  </div>
+    <% if (user.role === 'admin') { %>
+      <a href="/donations/add" class="btn" style="background-color: var(--clr-sage);">
+        <i class="fa-solid fa-plus"></i> Add Donation
+      </a>
+    <% } else { %>
+      <a href="https://givebutter.com/EllaRises" target="_blank" class="btn" style="background-color: var(--clr-pink-dark);">
+        <i class="fa-solid fa-heart"></i> Donate Now
+      </a>
+    <% } %> </div>
 
   <div class="table-wrap">
     <table>
