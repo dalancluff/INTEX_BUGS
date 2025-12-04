@@ -1,4 +1,4 @@
-// Dalan Was Here
+// Dalan
 
 // ------------------- MODULES -------------------
 require('dotenv').config();
@@ -214,8 +214,13 @@ app.post('/register', async (req, res) => {
   try {
     const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userCheck.rows.length > 0) {
-      return res.render('register', { message: 'Email already registered' });
+      // Use 'error_message' to match your EJS file
+      return res.render('register', {
+        error_message: 'Email already registered',
+        success_message: null
+      });
     }
+
 
     // --- CHANGE STARTS HERE ---
     // Hash the password with a salt round of 10
@@ -227,7 +232,7 @@ app.post('/register', async (req, res) => {
     `;
    
     // Insert 'hashedPassword' instead of the plain 'password'
-    await pool.query(insertQuery, [first_name, last_name, email, email, hashedPassword]);
+    await pool.query(insertQuery, [first_name, last_name, email, hashedPassword]);
     // --- CHANGE ENDS HERE ---
 
     res.redirect('/login');
