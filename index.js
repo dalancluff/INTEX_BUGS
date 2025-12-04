@@ -625,11 +625,16 @@ app.get('/donations', async (req, res) => { // You might want to add 'requireLog
 // ==================================================================
 
 // 1. LIST ALL DONATIONS (Search by Name, Amount, or Date)
+// 1. LIST DONATIONS (Secured)
 app.get('/donation_list', requireLogin, async (req, res) => {
   try {
     const { search } = req.query;
+    const isManager = req.session.user.role === 'admin';
+    const userId = req.session.user.id;
+
+    // Base Query
     let queryText = `
-      SELECT 
+      SELECT
         d.donation_id,
         d.amount,
         d.donation_date AS date,
@@ -639,35 +644,51 @@ app.get('/donation_list', requireLogin, async (req, res) => {
       JOIN users u ON d.user_id = u.user_id
     `;
 
-    const queryParams = [];
+    // Dynamic filtering
+    let whereClauses = [];
+    let queryParams = [];
+    let paramCounter = 1;
 
-    if (search) {
-      // Search First Name OR Last Name OR Amount OR Date
-      queryText += ` 
-        WHERE u.first_name ILIKE $1 
-        OR u.last_name ILIKE $1
-        OR CAST(d.amount AS TEXT) ILIKE $1
-        OR CAST(d.donation_date AS TEXT) ILIKE $1
-      `;
-      queryParams.push(`%${search}%`);
+    // SECURITY CHECK: If not admin, restrict to their own ID
+    if (!isManager) {
+      whereClauses.push(`d.user_id = $${paramCounter}`);
+      queryParams.push(userId);
+      paramCounter++;
     }
 
+    // SEARCH FILTER (Applies to everyone)
+    if (search) {
+      whereClauses.push(`(
+        u.first_name ILIKE $${paramCounter}
+        OR u.last_name ILIKE $${paramCounter}
+        OR CAST(d.amount AS TEXT) ILIKE $${paramCounter}
+        OR CAST(d.donation_date AS TEXT) ILIKE $${paramCounter}
+      )`);
+      queryParams.push(`%${search}%`);
+      paramCounter++;
+    }
+
+    // Combine clauses if they exist
+    if (whereClauses.length > 0) {
+      queryText += ` WHERE ` + whereClauses.join(' AND ');
+    }
+
+    // Finalize Sort
     queryText += ` ORDER BY d.donation_date DESC NULLS LAST`;
 
     const result = await pool.query(queryText, queryParams);
-    
-    // UPDATED: Used req.session.user instead of req.user
-    res.render('donation_list', { 
-        user: req.session.user, 
+   
+    res.render('donation_list', {
+        user: req.session.user,
         donations: result.rows,
-        searchTerm: search || '' 
+        searchTerm: search || ''
     });
+
   } catch (err) {
     console.error('❌ Error loading donation list:', err);
     res.status(500).send('Error loading donation list.');
   }
 });
-
 
 // 2. SHOW "ADD DONATION" FORM
 app.get('/donations/add', requireLogin, async (req, res) => {
