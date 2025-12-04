@@ -1183,23 +1183,37 @@ app.post('/delete-survey/:id', requireLogin, requireManager, async (req, res) =>
 // ---------------------------------------------
 // Milestones Page Route
 // ---------------------------------------------
-// 1. LIST Milestones
-// 1. LIST ALL (Main Page)
-app.get('/milestones', async (req, res) => {
+// 1. LIST Milestones (Main Page)
+
+app.get('/milestones', requireLogin, async (req, res) => {
   try {
     const { search = '' } = req.query; 
+    const currentUser = req.session.user;
+
+    // --- DEBUGGING LOGS (Check your terminal when you refresh the page) ---
+    console.log(`👤 Milestones Page Accessed by: ${currentUser.email} (ID: ${currentUser.id})`);
+    console.log(`🔑 Detected Role: '${currentUser.role}'`);
+
     let whereConditions = [];
     let params = [];
     let paramCounter = 1;
 
+    // --- SECURITY ENFORCEMENT ---
+    // If the user is NOT strictly an 'admin', force filter to their own ID.
+    if (currentUser.role !== 'admin') {
+        console.log('🔒 Non-Admin detected. Restricting data to own records.');
+        whereConditions.push(`u.user_id = $${paramCounter}`);
+        params.push(currentUser.id);
+        paramCounter++;
+    }
+
+    // Search Filter (Applies to everyone, but non-admins are already restricted to self)
     if (search && search.trim() !== '') {
         whereConditions.push(`(u.first_name ILIKE $${paramCounter} OR u.last_name ILIKE $${paramCounter})`);
         params.push(`%${search.trim()}%`);
         paramCounter++;
     }
 
-    // Important: We select distinct users first, then we can aggregate or loop.
-    // However, to keep your existing structure, let's just query everything and group in JS.
     const sql = `
       SELECT u.user_id, u.first_name, u.last_name, m.milestone_id, m.title, m.milestone_date
       FROM users u
@@ -1210,6 +1224,7 @@ app.get('/milestones', async (req, res) => {
     
     const result = await pool.query(sql, params);
 
+    // Grouping logic (same as before)
     const grouped = {};
     result.rows.forEach(row => {
       if (!grouped[row.user_id]) {
@@ -1220,7 +1235,7 @@ app.get('/milestones', async (req, res) => {
           milestones: []
         };
       }
-      if (row.milestone_id) { // Only add if milestone exists
+      if (row.milestone_id) { 
         grouped[row.user_id].milestones.push({
           milestone_id: row.milestone_id,
           title: row.title,
@@ -1230,13 +1245,13 @@ app.get('/milestones', async (req, res) => {
     });
 
     res.render('milestones', {
-      user: req.session.user,        
+      user: currentUser,        
       usersWithMilestones: Object.values(grouped),           
       filters: { search }            
     });
 
   } catch (err) {
-    console.error('Error loading milestones:', err);
+    console.error('❌ Error loading milestones:', err);
     res.status(500).send('Server Error');
   }
 });
