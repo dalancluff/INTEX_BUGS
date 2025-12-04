@@ -123,6 +123,7 @@
     <table>
       <thead>
         <tr>
+          <th>Donor ID</th>
           <th>Donor Name</th>
           <th>Amount</th>
           <th>Date</th>
@@ -137,33 +138,39 @@
         <% } %>
 
         <% donations.forEach(donation => { %>
-          <tr>
-            <td><%= donation.donor_name %></td>
-            
-            <td>$<%= Number(donation.amount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) %></td>
-            
-            <td>
-              <% if (donation.date) { %>
-                <%= new Date(donation.date).toLocaleDateString() %>
-              <% } else { %>
-                <span style="opacity: 0.5;">—</span> 
-              <% } %>
-            </td>
+  <tr>
+    <!-- New User ID column -->
+    <td><%= donation.user_id ? donation.user_id : '—' %></td>
 
-            <% if (user.role === 'admin') { %>
-              <td style="text-align: right; min-width: 140px;">
-                <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                  <a href="/donations/edit/<%= donation.donation_id %>" class="btn" style="padding: 0 1rem; font-size: 0.8rem; background-color: var(--clr-blue-muted); height: 32px; line-height: 32px;">Edit</a>
-                  
-                  <form action="/donations/delete/<%= donation.donation_id %>" method="POST" onsubmit="return confirm('Are you sure you want to delete this donation?');">
-                    <button type="submit" class="btn" style="padding: 0 1rem; font-size: 0.8rem; background-color: var(--clr-charcoal); height: 32px; line-height: 32px;">Delete</button>
-                  </form>
-                </div>
-              </td>
-            <% } %>
+    <!-- Donor name (works for both users and guests) -->
+    <td>
+      <%= donation.first_name %> <%= donation.last_name %>
+    </td>
+    
+    <td>$<%= Number(donation.amount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) %></td>
+    
+    <td>
+      <% if (donation.date) { %>
+        <%= new Date(donation.date).toLocaleDateString() %>
+      <% } else { %>
+        <span style="opacity: 0.5;">—</span> 
+      <% } %>
+    </td>
 
-          </tr>
-        <% }) %>
+    <% if (user.role === 'admin') { %>
+      <td style="text-align: right; min-width: 140px;">
+        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+          <a href="/donations/edit/<%= donation.donation_id %>" class="btn" style="padding: 0 1rem; font-size: 0.8rem; background-color: var(--clr-blue-muted); height: 32px; line-height: 32px;">Edit</a>
+          
+          <form action="/donations/delete/<%= donation.donation_id %>" method="POST" onsubmit="return confirm('Are you sure you want to delete this donation?');">
+            <button type="submit" class="btn" style="padding: 0 1rem; font-size: 0.8rem; background-color: var(--clr-charcoal); height: 32px; line-height: 32px;">Delete</button>
+          </form>
+        </div>
+      </td>
+    <% } %>
+
+  </tr>
+<% }) %>
       </tbody>
     </table>
   </div>
